@@ -1,0 +1,44 @@
+[
+  {
+    "id": "r1",
+    "createdAt": "2025-11-24 21:13",
+    "reporter": "NovaRP",
+    "accused": "TTV_Nitro",
+    "reasonShort": "VDM / reckless driving in city center",
+    "description": "Accused repeatedly drove into pedestrians during an active RP scene near Legion Square after multiple warnings from officers.",
+    "status": "Open",
+    "severity": "High",
+    "handler": null,
+    "ruleTags": ["VDM", "Fail RP"],
+    "evidenceLinks": ["Clip: https://clips.twitch.tv/...nitro-legion"],
+    "staffNotes": "Check logs around 21:10–21:14 server time. Might need a 24h ban if confirmed."
+  },
+  {
+    "id": "r2",
+    "createdAt": "2025-11-24 20:42",
+    "reporter": "RandomCitizen",
+    "accused": "DriftKing",
+    "reasonShort": "Street racing in safe zone",
+    "description": "Reported for doing repeated high-speed passes through Legion and parking lot burnout near spawn zone.",
+    "status": "In progress",
+    "severity": "Medium",
+    "handler": "Lena",
+    "ruleTags": ["Unsafe driving", "Safe zone"],
+    "evidenceLinks": ["Screenshot: /evidence/2025-11-24-drift-1.png"],
+    "staffNotes": "Lena speaking with them in voice; check prior warnings."
+  },
+  {
+    "id": "r3",
+    "createdAt": "2025-11-24 19:05",
+    "reporter": "OfficerMike",
+    "accused": "NovaRP",
+    "reasonShort": "Breaking RP in police station",
+    "description": "Accused was joking OOC repeatedly while being processed, ignoring staff pings and /ooc reminders.",
+    "status": "Resolved",
+    "severity": "Low",
+    "handler": "Jay",
+    "ruleTags": ["OOC in IC", "Police department"],
+    "evidenceLinks": ["Log snippet: #pd-internal 19:02–19:07"],
+    "staffNotes": "Gave formal written warning; no ban this time."
+  }
+]

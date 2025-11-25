@@ -1,0 +1,29 @@
+// src/app/chartData.js
+// Fake data for the dashboard charts (server concurrency and incidents)
+
+// Players online over the last 12 hours
+export const concurrencyData = [
+  { time: '10:00', players: 34 },
+  { time: '11:00', players: 42 },
+  { time: '12:00', players: 57 },
+  { time: '13:00', players: 63 },
+  { time: '14:00', players: 71 },
+  { time: '15:00', players: 68 },
+  { time: '16:00', players: 75 },
+  { time: '17:00', players: 88 },
+  { time: '18:00', players: 112 },
+  { time: '19:00', players: 132 },
+  { time: '20:00', players: 124 },
+  { time: '21:00', players: 96 },
+]
+
+// Crashes + reports for each day of the week
+export const incidentsData = [
+  { day: 'Mon', crashes: 1, reports: 12 },
+  { day: 'Tue', crashes: 0, reports: 9 },
+  { day: 'Wed', crashes: 2, reports: 15 },
+  { day: 'Thu', crashes: 0, reports: 11 },
+  { day: 'Fri', crashes: 1, reports: 19 },
+  { day: 'Sat', crashes: 3, reports: 24 },
+  { day: 'Sun', crashes: 1, reports: 17 },
+]
