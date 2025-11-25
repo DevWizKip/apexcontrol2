@@ -1,91 +1,97 @@
 // src/pages/LoginPage.jsx
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 
 function LoginPage() {
+  const { login } = useAuth()
   const navigate = useNavigate()
+
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
 
   function handleSubmit(e) {
     e.preventDefault()
-    setError('')
+    if (!name.trim()) return
 
-    if (!email || !password) {
-      setError('Please enter your email and password.')
-      return
-    }
-
-    // In a real app you would verify credentials here.
-    // For now we just log them and move to the dashboard.
-    console.log('Login attempt:', { email })
-
-    navigate('/app/dashboard')
+    // In a real app this would check a backend.
+    // Here we just "log you in" with the info you typed.
+    login({ name, email, role: 'owner' })
+    navigate('/account')
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
-        {/* Logo */}
-        <div className="flex items-center gap-2 mb-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500 text-slate-950 font-bold">
-            A
-          </span>
-          <span className="font-semibold text-sm">ApexControl</span>
-        </div>
+    <div className="gta-page">
+      <main className="mx-auto max-w-md space-y-6 px-4 py-10 text-[11px] text-slate-300">
+        <button
+          onClick={() => (window.location.href = '/')}
+          className="mb-4 inline-flex items-center rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-[11px] text-slate-200 hover:border-cyan-400 hover:text-cyan-300"
+        >
+          ← Back to home
+        </button>
 
-        <div className="space-y-1">
-          <h1 className="text-lg font-semibold">Sign in</h1>
-          <p className="text-xs text-slate-400">
-            Continue to your server overview and player analytics.
+        <header className="space-y-2">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-cyan-400">
+            Login
           </p>
-        </div>
+          <h1 className="text-2xl font-semibold text-slate-50">
+            Sign in to TorquePanel.
+          </h1>
+          <p className="text-xs text-slate-400">
+            This demo does not talk to a real backend – it just stores your
+            account locally so you can see how the panel would behave.
+          </p>
+        </header>
 
-        <form className="space-y-3 text-xs" onSubmit={handleSubmit}>
-          <div className="space-y-1">
-            <label className="block text-slate-200">Email</label>
+        <form
+          onSubmit={handleSubmit}
+          className="gta-card space-y-3 p-4 text-[11px]"
+        >
+          <div className="space-y-1.5">
+            <label className="block text-[10px] uppercase tracking-wide text-slate-400">
+              Display name
+            </label>
             <input
-              type="email"
-              className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-xs text-slate-100"
-              placeholder="you@example.com"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
+              placeholder="NovaRP, CityOwner, etc."
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-[10px] uppercase tracking-wide text-slate-400">
+              Email (optional)
+            </label>
+            <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
+              placeholder="you@cityrp.gg"
             />
           </div>
-
-          <div className="space-y-1">
-            <label className="block text-slate-200">Password</label>
-            <input
-              type="password"
-              className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-xs text-slate-100"
-              placeholder="your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-
-          {error && (
-            <div className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/40 rounded px-3 py-2">
-              {error}
-            </div>
-          )}
 
           <button
             type="submit"
-            className="w-full mt-1 py-2.5 rounded-full bg-cyan-500 text-slate-950 text-sm font-medium"
+            className="w-full rounded-full bg-gradient-to-r from-cyan-500 to-emerald-400 px-4 py-1.5 text-[11px] font-medium text-slate-950 shadow-lg shadow-cyan-500/30 hover:brightness-110"
           >
-            Sign in
+            Log in
           </button>
         </form>
 
-        <p className="text-[11px] text-slate-500">
-          New here?{' '}
-          <Link to="/signup" className="text-cyan-400">
-            Create an account
-          </Link>
+        <p className="text-center text-[10px] text-slate-400">
+          Don&apos;t have an account?{' '}
+          <button
+            type="button"
+            onClick={() => navigate('/signup')}
+            className="text-cyan-300 underline underline-offset-2 hover:text-cyan-200"
+          >
+            Sign up instead
+          </button>
+          .
         </p>
-      </div>
+      </main>
     </div>
   )
 }

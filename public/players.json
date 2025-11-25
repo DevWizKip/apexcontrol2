@@ -1,38 +1,102 @@
-[
-  {
-    "id": "1",
-    "name": "TTV_Nitro",
-    "identifiers": ["steam:11000013abcdef0"],
-    "playtimeHours": 186,
-    "lastSeen": "2 hours ago",
-    "sessions30d": 24,
-    "infractions": 3,
-    "risk": "High",
-    "status": "Online",
-    "tags": ["Streamer", "VIP"]
-  },
-  {
-    "id": "2",
-    "name": "NovaRP",
-    "identifiers": ["steam:11000013aaaaaa0"],
-    "playtimeHours": 42,
-    "lastSeen": "1 day ago",
-    "sessions30d": 8,
-    "infractions": 0,
-    "risk": "Low",
-    "status": "Offline",
-    "tags": ["Police"]
-  },
-  {
-    "id": "3",
-    "name": "DriftKing",
-    "identifiers": ["steam:11000013bbbbbbb"],
-    "playtimeHours": 73,
-    "lastSeen": "10 minutes ago",
-    "sessions30d": 15,
-    "infractions": 1,
-    "risk": "Medium",
-    "status": "Online",
-    "tags": ["Racer"]
-  }
-]
+{
+  "players": [
+    {
+      "id": 1,
+      "name": "NovaRP",
+      "rockstarId": "steam:110000112345678",
+      "playtimeHours": 242,
+      "lastSeen": "2 hours ago",
+      "sessions30d": 18,
+      "infractionsTotal": 3,
+      "risk": "Medium",
+      "status": "Active",
+      "region": "NA-East",
+      "lastAction": "Warned for OOC in PD",
+      "tags": ["cop", "staff", "streamer"],
+      "infractions": [
+        {
+          "date": "2024-05-12",
+          "reason": "OOC in PD cells",
+          "staff": "Karma",
+          "severity": "Medium",
+          "type": "Warn"
+        },
+        {
+          "date": "2024-04-03",
+          "reason": "VDM - Legion Square",
+          "staff": "Pixel",
+          "severity": "High",
+          "type": "Kick"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "TTV_Nitro",
+      "rockstarId": "steam:110000119999999",
+      "playtimeHours": 120,
+      "lastSeen": "34 minutes ago",
+      "sessions30d": 22,
+      "infractionsTotal": 4,
+      "risk": "High",
+      "status": "Active",
+      "region": "EU-West",
+      "lastAction": "Temp banned for VDM",
+      "tags": ["racer", "gang"],
+      "infractions": [
+        {
+          "date": "2024-05-20",
+          "reason": "Multiple VDM reports",
+          "staff": "Pixel",
+          "severity": "High",
+          "type": "Temp ban"
+        },
+        {
+          "date": "2024-05-10",
+          "reason": "Combat logging",
+          "staff": "Nova",
+          "severity": "Medium",
+          "type": "Warn"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "DriftKing",
+      "rockstarId": "steam:110000118888888",
+      "playtimeHours": 89,
+      "lastSeen": "1 day ago",
+      "sessions30d": 15,
+      "infractionsTotal": 1,
+      "risk": "Low",
+      "status": "Active",
+      "region": "NA-West",
+      "lastAction": "Info note added",
+      "tags": ["racer"],
+      "infractions": [
+        {
+          "date": "2024-04-18",
+          "reason": "Street racing near hospital",
+          "staff": "Ash",
+          "severity": "Low",
+          "type": "Note"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Karma",
+      "rockstarId": "steam:110000117777777",
+      "playtimeHours": 310,
+      "lastSeen": "Online now",
+      "sessions30d": 26,
+      "infractionsTotal": 0,
+      "risk": "Low",
+      "status": "Staff",
+      "region": "NA-East",
+      "lastAction": "Staff · handled 5 tickets today",
+      "tags": ["staff", "cop"],
+      "infractions": []
+    }
+  ]
+}

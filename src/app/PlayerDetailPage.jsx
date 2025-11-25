@@ -1,240 +1,566 @@
 // src/app/PlayerDetailPage.jsx
-// Shows details for a single player: risk, tags, stats, recent sessions chart, etc.
+// Detailed view for a single player with graphs and reports.
+// Uses the same "fallback on error" idea as PlayersPage,
+// so it always works even if /Players.json fails.
 
-import { useMemo } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import {
-  LineChart,
-  Line,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
-  ResponsiveContainer,
+  AreaChart,
+  Area,
   CartesianGrid,
 } from 'recharts'
-import { players, playerSessions } from './fakeData'
 
-// Re-use the same badge styles as in PlayersPage
-function RiskBadge({ value }) {
-  const base = 'px-2 py-0.5 rounded-full text-[11px] font-medium'
-  if (value === 'High') {
-    return <span className={`${base} bg-red-500/20 text-red-200`}>High risk</span>
-  }
-  if (value === 'Medium') {
-    return <span className={`${base} bg-amber-500/20 text-amber-100`}>Medium risk</span>
-  }
-  return <span className={`${base} bg-emerald-500/20 text-emerald-100`}>Low risk</span>
-}
-
-function StatusBadge({ value }) {
-  const base = 'px-2 py-0.5 rounded-full text-[11px] font-medium'
-  if (value === 'Online') {
-    return (
-      <span className={`${base} bg-emerald-500/15 text-emerald-200`}>
-        ● Online
-      </span>
-    )
-  }
-  return (
-    <span className={`${base} bg-slate-700/70 text-slate-200`}>
-      ● Offline
-    </span>
-  )
-}
+// Same fallback data structure as in PlayersPage (shortened comments)
+const fallbackPlayers = [
+  {
+    id: 1,
+    name: 'NovaRP',
+    rockstarId: 'steam:110000112345678',
+    playtimeHours: 242,
+    lastSeen: '2 hours ago',
+    sessions30d: 18,
+    infractionsTotal: 3,
+    risk: 'Medium',
+    status: 'Active',
+    region: 'NA-East',
+    lastAction: 'Warned for OOC in PD',
+    tags: ['cop', 'staff', 'streamer'],
+    infractions: [
+      {
+        date: '2024-05-12',
+        reason: 'OOC in PD cells',
+        staff: 'Karma',
+        severity: 'Medium',
+        type: 'Warn',
+      },
+      {
+        date: '2024-04-03',
+        reason: 'VDM - Legion Square',
+        staff: 'Pixel',
+        severity: 'High',
+        type: 'Kick',
+      },
+    ],
+  },
+  {
+    id: 2,
+    name: 'TTV_Nitro',
+    rockstarId: 'steam:110000119999999',
+    playtimeHours: 120,
+    lastSeen: '34 minutes ago',
+    sessions30d: 22,
+    infractionsTotal: 4,
+    risk: 'High',
+    status: 'Active',
+    region: 'EU-West',
+    lastAction: 'Temp banned for VDM',
+    tags: ['racer', 'gang'],
+    infractions: [
+      {
+        date: '2024-05-20',
+        reason: 'Multiple VDM reports',
+        staff: 'Pixel',
+        severity: 'High',
+        type: 'Temp ban',
+      },
+      {
+        date: '2024-05-10',
+        reason: 'Combat logging',
+        staff: 'Nova',
+        severity: 'Medium',
+        type: 'Warn',
+      },
+    ],
+  },
+  {
+    id: 3,
+    name: 'DriftKing',
+    rockstarId: 'steam:110000118888888',
+    playtimeHours: 89,
+    lastSeen: '1 day ago',
+    sessions30d: 15,
+    infractionsTotal: 1,
+    risk: 'Low',
+    status: 'Active',
+    region: 'NA-West',
+    lastAction: 'Info note added',
+    tags: ['racer'],
+    infractions: [
+      {
+        date: '2024-04-18',
+        reason: 'Street racing near hospital',
+        staff: 'Ash',
+        severity: 'Low',
+        type: 'Note',
+      },
+    ],
+  },
+  {
+    id: 4,
+    name: 'Karma',
+    rockstarId: 'steam:110000117777777',
+    playtimeHours: 310,
+    lastSeen: 'Online now',
+    sessions30d: 26,
+    infractionsTotal: 0,
+    risk: 'Low',
+    status: 'Staff',
+    region: 'NA-East',
+    lastAction: 'Staff · handled 5 tickets today',
+    tags: ['staff', 'cop'],
+    infractions: [],
+  },
+]
 
 function PlayerDetailPage() {
-  // Get the ":id" part of the URL, e.g. /app/players/1
-  const { id } = useParams()
+  const { playerId } = useParams()
+  const navigate = useNavigate()
 
-  // Look up this player in the fake players array
-  const player = players.find((p) => p.id === id)
+  const [player, setPlayer] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [note, setNote] = useState(null)
+  const [error, setError] = useState(null)
 
-  // Sessions for this player from fakeData
-  const sessions = playerSessions[id] || []
+  useEffect(() => {
+    async function loadPlayer() {
+      try {
+        setLoading(true)
+        setError(null)
+        setNote(null)
 
-  // Calculate average + last session length from the sessions array
-  const sessionStats = useMemo(() => {
-    if (!sessions.length) {
-      return { avgLength: 0, lastLength: 0 }
+        const res = await fetch('/Players.json')
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`)
+        }
+        const data = await res.json()
+        const list = data.players || data
+        const found =
+          list.find((p) => String(p.id) === String(playerId)) || null
+
+        if (!found) {
+          setError('Player not found in Players.json, showing demo data.')
+          // fall through to fallback
+          const fb =
+            fallbackPlayers.find(
+              (p) => String(p.id) === String(playerId)
+            ) || null
+          setPlayer(fb)
+        } else {
+          setPlayer(found)
+        }
+      } catch (err) {
+        console.warn(
+          'Could not load Players.json in PlayerDetailPage, using fallback:',
+          err
+        )
+        const fb =
+          fallbackPlayers.find(
+            (p) => String(p.id) === String(playerId)
+          ) || null
+        setPlayer(fb)
+        setNote('Showing built-in demo data (Players.json not loaded).')
+      } finally {
+        setLoading(false)
+      }
     }
-    const total = sessions.reduce((sum, s) => sum + s.lengthMin, 0)
-    const avgLength = Math.round(total / sessions.length)
-    const lastLength = sessions[0].lengthMin
-    return { avgLength, lastLength }
-  }, [sessions])
 
-  // If the ID is invalid, show a simple error and link back
+    loadPlayer()
+  }, [playerId])
+
+  if (loading) {
+    return <p className="text-xs text-slate-400">Loading player…</p>
+  }
+
   if (!player) {
     return (
-      <div className="space-y-2">
-        <p className="text-sm text-slate-300">Player not found.</p>
-        <Link to="/app/players" className="text-xs text-cyan-400">
-          ← Back to players
-        </Link>
+      <div className="space-y-2 text-xs text-slate-300">
+        <p className="text-amber-300">Player not found in demo data.</p>
+        <button
+          onClick={() => navigate('/app/players')}
+          className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-[11px] text-slate-100 hover:border-cyan-400 hover:text-cyan-300"
+        >
+          Back to player list
+        </button>
       </div>
     )
   }
+
+  const risk = (player.risk || '').toLowerCase()
+
+  // --- Build demo stats for graphs ---
+
+  // "Most active hours this month" – bar chart buckets
+  const baseHours = [
+    { label: '00–03', value: 6 },
+    { label: '03–06', value: 3 },
+    { label: '06–09', value: 4 },
+    { label: '09–12', value: 7 },
+    { label: '12–15', value: 10 },
+    { label: '15–18', value: 14 },
+    { label: '18–21', value: 18 },
+    { label: '21–24', value: 11 },
+  ]
+
+  const hoursOnlineData = baseHours.map((h) => ({
+    hour: h.label,
+    minutes: h.value + (player.id || 1) * 1.5, // small variation per player
+  }))
+
+  // "Sessions this month" – area chart with 10 sample days
+  const baseSessions = [
+    2, 4, 3, 5, 4, 6, 7, 5, 6, 8,
+  ]
+
+  const sessionsData = baseSessions.map((val, idx) => ({
+    day: `Day ${idx + 1}`,
+    sessions: val + ((player.id || 1) % 3),
+  }))
+
+  // Aggregate report severities for a small bar chart
+  const infractions = Array.isArray(player.infractions)
+    ? player.infractions
+    : []
+
+  const severityCounts = infractions.reduce(
+    (acc, inf) => {
+      const sev = (inf.severity || 'Other').toLowerCase()
+      if (sev === 'high') acc.high += 1
+      else if (sev === 'medium') acc.medium += 1
+      else if (sev === 'low') acc.low += 1
+      else acc.other += 1
+      return acc
+    },
+    { high: 0, medium: 0, low: 0, other: 0 }
+  )
+
+  const severityData = [
+    { label: 'High', count: severityCounts.high },
+    { label: 'Med', count: severityCounts.medium },
+    { label: 'Low', count: severityCounts.low },
+    { label: 'Other', count: severityCounts.other },
+  ]
 
   return (
     <div className="space-y-4">
-      {/* Header: player name, risk/status badges, and action buttons */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+      {/* HEADER */}
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
+          <button
+            onClick={() => navigate('/app/players')}
+            className="mb-1 inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-950 px-2.5 py-1 text-[11px] text-slate-200 hover:border-cyan-400 hover:text-cyan-300"
+          >
+            ← Back to players
+          </button>
+          <h1 className="text-lg font-semibold text-slate-50">
+            {player.name}
+          </h1>
           <p className="text-xs text-slate-400">
-            <Link to="/app/players" className="text-cyan-400">
-              Players
-            </Link>{' '}
-            / {player.name}
+            ID: {player.id || 'N/A'} · Rockstar/Steam:{' '}
+            {player.rockstarId || player.steamId || 'N/A'}
           </p>
-          <h1 className="text-xl font-semibold text-slate-50">{player.name}</h1>
-          <p className="text-xs text-slate-400">
-            Total playtime {player.playtimeHours}h · Last seen {player.lastSeen}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-            <RiskBadge value={player.risk} />
-            <StatusBadge value={player.status} />
-          </div>
+          {note && (
+            <p className="mt-1 text-[11px] text-slate-500">{note}</p>
+          )}
         </div>
-
-        {/* These buttons are just visual; they don't do anything yet */}
-        <div className="flex flex-wrap gap-2 text-xs">
-          <button className="px-3 py-1.5 rounded-md bg-slate-900 border border-slate-700">
-            Warn
-          </button>
-          <button className="px-3 py-1.5 rounded-md bg-slate-900 border border-slate-700">
-            Temp ban
-          </button>
-          <button className="px-3 py-1.5 rounded-md bg-red-500 text-slate-950">
-            Perm ban
-          </button>
-        </div>
-      </div>
-
-      {/* Tags / roles for this player */}
-      <section className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-300">
-        <h2 className="text-xs font-semibold text-slate-100 mb-1">Tags</h2>
-        {player.tags.length === 0 ? (
-          <p className="text-slate-500">
-            No tags yet. You can use tags for roles like Police, Mechanic, Streamer.
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-1">
-            {player.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-100"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Summary cards for this player */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
-          <div className="text-slate-400">Sessions (30 days)</div>
-          <div className="text-lg font-semibold text-slate-50">
-            {player.sessions30d}
-          </div>
-        </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
-          <div className="text-slate-400">Infractions</div>
-          <div className="text-lg font-semibold text-slate-50">
-            {player.infractions}
-          </div>
-        </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
-          <div className="text-slate-400">Avg session length</div>
-          <div className="text-lg font-semibold text-slate-50">
-            {sessionStats.avgLength} min
-          </div>
-        </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
-          <div className="text-slate-400">Last session</div>
-          <div className="text-lg font-semibold text-slate-50">
-            {sessionStats.lastLength} min
-          </div>
-        </div>
-      </div>
-
-      {/* Main row: recent sessions chart + identifiers */}
-      <div className="grid lg:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)] gap-4">
-        {/* Sessions chart + list */}
-        <section className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-100">
-              Recent sessions
-            </h2>
-            <span className="text-[11px] text-slate-500">
-              Last {sessions.length || 0} sessions
+        <div className="flex flex-wrap gap-2 text-[11px]">
+          {risk && (
+            <span
+              className={
+                'rounded-full px-3 py-1 ' +
+                (risk === 'high'
+                  ? 'bg-amber-500/20 text-amber-300'
+                  : risk === 'medium'
+                  ? 'bg-sky-500/20 text-sky-200'
+                  : 'bg-emerald-500/20 text-emerald-200')
+              }
+            >
+              Risk: {player.risk}
             </span>
-          </div>
+          )}
+          <span className="rounded-full bg-slate-900 px-3 py-1 text-slate-200">
+            Status: {player.status || 'Active'}
+          </span>
+        </div>
+      </div>
 
-          {/* Line chart of session lengths */}
-          <div className="h-44">
-            {sessions.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-slate-500 text-[11px]">
-                No session data yet.
+      {/* TOP GRID: SUMMARY + TAGS + QUICK ACTIONS */}
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)]">
+        {/* Summary */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-300">
+          <h2 className="mb-2 text-sm font-semibold text-slate-50">
+            Summary
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <p className="text-[11px] text-slate-400">Total playtime</p>
+              <p className="text-base font-semibold text-emerald-300">
+                {player.playtimeHours != null
+                  ? `${player.playtimeHours}h`
+                  : '—'}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-500">
+                Sessions (30d): {player.sessions30d ?? '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-400">Last seen</p>
+              <p className="text-base font-semibold text-sky-300">
+                {player.lastSeen || 'Unknown'}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-500">
+                Region: {player.region || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-400">Infractions</p>
+              <p className="text-base font-semibold text-amber-300">
+                {player.infractionsTotal ?? infractions.length}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-500">
+                Last action:{' '}
+                {player.lastAction || 'No recent moderation actions'}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Tags + quick actions */}
+        <section className="space-y-3">
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-300">
+            <h2 className="mb-2 text-sm font-semibold text-slate-50">
+              Roles &amp; tags
+            </h2>
+            {Array.isArray(player.tags) && player.tags.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {player.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full bg-slate-800 px-3 py-1 text-[11px] text-slate-100"
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={[...sessions].reverse()} // show oldest first on the axis
-                  margin={{ top: 5, right: 16, bottom: 0, left: -20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                  <XAxis
-                    dataKey="startedAt"
-                    tick={{ fontSize: 9, fill: '#9ca3af' }}
-                    tickLine={false}
-                    axisLine={{ stroke: '#4b5563' }}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 9, fill: '#9ca3af' }}
-                    tickLine={false}
-                    axisLine={{ stroke: '#4b5563' }}
-                    width={30}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#020617',
-                      border: '1px solid #1f2937',
-                      fontSize: 11,
-                      color: '#e5e7eb',
-                    }}
-                    labelStyle={{ fontSize: 10 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="lengthMin"
-                    stroke="#22d3ee"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <p className="text-[11px] text-slate-500">
+                No tags assigned yet. In a live city you might tag players as
+                <span className="text-slate-400">
+                  {' '}
+                  cop, gang, medic, racer, streamer, staff
+                </span>
+                .
+              </p>
             )}
           </div>
 
-          {/* Table of recent sessions under the chart */}
-          {sessions.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-[11px]">
-                <thead className="text-slate-400 border-b border-slate-800">
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-300">
+            <h2 className="mb-2 text-sm font-semibold text-slate-50">
+              Quick actions (demo only)
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              <button className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-[11px] text-slate-200 hover:border-amber-400 hover:text-amber-300">
+                Warn player
+              </button>
+              <button className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-[11px] text-slate-200 hover:border-rose-400 hover:text-rose-300">
+                Temp ban (demo)
+              </button>
+              <button className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-[11px] text-slate-200 hover:border-emerald-400 hover:text-emerald-300">
+                Add note
+              </button>
+            </div>
+            <p className="mt-2 text-[10px] text-slate-500">
+              In a real TorquePanel deployment these buttons would open
+              confirmation dialogs and log actions to your audit trail.
+            </p>
+          </div>
+        </section>
+      </div>
+
+      {/* MIDDLE GRID: GRAPHS */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.2fr)]">
+        {/* Most active hours */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-300">
+          <div className="mb-2 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-50">
+                Most active hours this month
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                Approximate time windows when this player is most often online.
+              </p>
+            </div>
+            <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] text-slate-400">
+              Demo analytics
+            </span>
+          </div>
+          <div className="mt-3 h-40">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={hoursOnlineData}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#1e293b"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="hour"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 10, fill: '#94a3b8' }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 10, fill: '#94a3b8' }}
+                  width={28}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#020617',
+                    border: '1px solid #1f2937',
+                    fontSize: 11,
+                    color: '#e5e7eb',
+                  }}
+                  labelStyle={{ fontSize: 10 }}
+                />
+                <Bar
+                  dataKey="minutes"
+                  radius={[6, 6, 0, 0]}
+                  fill="#22d3ee"
+                  opacity={0.85}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
+        {/* Sessions this month */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-300">
+          <div className="mb-2 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-50">
+                Sessions this month
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                How often this player has connected across the last 10 days.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 h-40">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={sessionsData}>
+                <defs>
+                  <linearGradient id="colorSessions" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.45} />
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#1e293b"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="day"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 10, fill: '#94a3b8' }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 10, fill: '#94a3b8' }}
+                  width={24}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#020617',
+                    border: '1px solid #1f2937',
+                    fontSize: 11,
+                    color: '#e5e7eb',
+                  }}
+                  labelStyle={{ fontSize: 10 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="sessions"
+                  stroke="#22c55e"
+                  fillOpacity={1}
+                  fill="url(#colorSessions)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      </div>
+
+      {/* LOWER GRID: REPORTS + SEVERITY SUMMARY */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1)]">
+        {/* Reports / infractions table */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-300">
+          <h2 className="mb-2 text-sm font-semibold text-slate-50">
+            Reports & infractions
+          </h2>
+          <p className="mb-2 text-[11px] text-slate-400">
+            Every report, warning, kick or ban logged against this player in the
+            demo data.
+          </p>
+          {infractions.length === 0 ? (
+            <p className="text-[11px] text-slate-500">
+              No reports recorded in the demo data for this player.
+            </p>
+          ) : (
+            <div className="mt-2 overflow-x-auto">
+              <table className="min-w-full border-separate border-spacing-y-1 text-[11px]">
+                <thead className="text-slate-400">
                   <tr>
-                    <th className="py-1 text-left">Start</th>
-                    <th className="py-1 text-left">Length</th>
-                    <th className="py-1 text-left">Avg ping</th>
+                    <th className="text-left font-normal px-2 py-1">Date</th>
+                    <th className="text-left font-normal px-2 py-1">Reason</th>
+                    <th className="text-left font-normal px-2 py-1">
+                      Severity
+                    </th>
+                    <th className="text-left font-normal px-2 py-1">Type</th>
+                    <th className="text-left font-normal px-2 py-1">Staff</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sessions.map((s) => (
-                    <tr key={s.id} className="border-b border-slate-900">
-                      <td className="py-1 pr-3">{s.startedAt}</td>
-                      <td className="py-1 pr-3">{s.lengthMin} min</td>
-                      <td className="py-1">{s.avgPing} ms</td>
+                  {infractions.map((inf, idx) => (
+                    <tr key={idx}>
+                      <td className="rounded-l-xl bg-slate-900/80 px-2 py-1.5 text-slate-300">
+                        {inf.date || 'Unknown'}
+                      </td>
+                      <td className="bg-slate-900/80 px-2 py-1.5 text-slate-200">
+                        {inf.reason || 'No reason provided'}
+                      </td>
+                      <td className="bg-slate-900/80 px-2 py-1.5">
+                        <span
+                          className={
+                            'rounded-full px-2 py-0.5 text-[10px] ' +
+                            ((inf.severity || '').toLowerCase() === 'high'
+                              ? 'bg-amber-500/20 text-amber-300'
+                              : (inf.severity || '').toLowerCase() ===
+                                'medium'
+                              ? 'bg-sky-500/20 text-sky-200'
+                              : (inf.severity || '').toLowerCase() === 'low'
+                              ? 'bg-emerald-500/20 text-emerald-200'
+                              : 'bg-slate-700/40 text-slate-200')
+                          }
+                        >
+                          {inf.severity || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="bg-slate-900/80 px-2 py-1.5 text-slate-300">
+                        {inf.type || 'Action'}
+                      </td>
+                      <td className="rounded-r-xl bg-slate-900/80 px-2 py-1.5 text-slate-300">
+                        {inf.staff || 'N/A'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -243,28 +569,59 @@ function PlayerDetailPage() {
           )}
         </section>
 
-        {/* Identifiers (Steam/Rockstar IDs etc.) */}
-        <section className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-2">
-          <h2 className="text-sm font-semibold text-slate-100">Identifiers</h2>
-          <ul>
-            {player.identifiers.map((idVal) => (
-              <li key={idVal} className="font-mono text-[11px]">
-                {idVal}
-              </li>
-            ))}
-          </ul>
+        {/* Severity summary chart */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-300">
+          <h2 className="mb-2 text-sm font-semibold text-slate-50">
+            Report severity mix
+          </h2>
+          <p className="mb-2 text-[11px] text-slate-400">
+            Quick view of how serious the reports are for this player.
+          </p>
+          <div className="mt-2 h-36">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={severityData}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#0f172a"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="label"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 10, fill: '#94a3b8' }}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 10, fill: '#94a3b8' }}
+                  width={20}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#020617',
+                    border: '1px solid #1f2937',
+                    fontSize: 11,
+                    color: '#e5e7eb',
+                  }}
+                  labelStyle={{ fontSize: 10 }}
+                />
+                <Bar
+                  dataKey="count"
+                  radius={[6, 6, 0, 0]}
+                  fill="#38bdf8"
+                  opacity={0.9}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="mt-2 text-[10px] text-slate-500">
+            In a real deployment, this would pull live counts from your
+            moderation logs and update in real time.
+          </p>
         </section>
       </div>
-
-      {/* Placeholder notes section for future infractions timeline */}
-      <section className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-2">
-        <h2 className="text-sm font-semibold text-slate-100">Notes & history</h2>
-        <p>
-          This is where you&apos;ll later show a timeline of infractions and staff notes
-          for this player. For now it&apos;s a static placeholder so you can design
-          around it.
-        </p>
-      </section>
     </div>
   )
 }

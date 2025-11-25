@@ -1,321 +1,183 @@
 // src/pages/FeaturesPage.jsx
-// Standalone Features page for TorquePanel with GTA / FiveM RP-focused copy
-// and some visual "graph" elements.
+import { useState } from 'react'
 
 function FeaturesPage() {
-  const serverUsage = [
-    { label: 'Main RP city', value: 88 },
-    { label: 'Whitelist city', value: 62 },
-    { label: 'Racing / drift', value: 54 },
-    { label: 'Freeroam / sandbox', value: 39 },
-  ]
+  const [scenario, setScenario] = useState('rp')
+
+  const scenarioCopy = {
+    rp: {
+      label: 'Whitelisted RP',
+      title: 'Deep RP cities with full staff teams',
+      body:
+        'For serious whitelisted roleplay cities with PD, EMS, gangs and strict rules. TorquePanel keeps staff on the same page so tickets do not disappear into Discord.',
+    },
+    drift: {
+      label: 'Drift / racing',
+      title: 'Frame-perfect servers for racers and drifters',
+      body:
+        'For drift and racing servers where latency, stability and peak times matter more than anything. See when your lobbies fill, which tracks pop and when to schedule events.',
+    },
+    freeroam: {
+      label: 'Freeroam / cops & robbers',
+      title: 'High-chaos freeroam with real control',
+      body:
+        'For chaos-heavy freeroam, cops and robbers and minigame servers. Track troublemakers, see what scripts are failing and keep an eye on anticheat without staring at console spam.',
+    },
+  }
+
+  const current = scenarioCopy[scenario]
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto max-w-5xl px-4 py-10">
+    <div className="gta-page">
+      <main className="mx-auto max-w-6xl space-y-8 px-4 py-10">
+        <button
+          onClick={() => (window.location.href = '/')}
+          className="mb-4 inline-flex items-center rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-[11px] text-slate-200 hover:border-cyan-400 hover:text-cyan-300"
+        >
+          ← Back to home
+        </button>
+
         {/* HEADER */}
-        <header className="mb-8">
-          <p className="text-[11px] uppercase tracking-wide text-cyan-400">
-            TorquePanel · Features
+        <header className="max-w-2xl space-y-2">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-cyan-400">
+            Feature overview
           </p>
-          <h1 className="mt-1 text-2xl font-semibold">
-            Everything your GTA / FiveM city needs in one control panel
+          <h1 className="text-2xl font-semibold text-slate-50">
+            Built for serious GTA / FiveM servers – not basic control panels.
           </h1>
-          <p className="mt-2 text-xs text-slate-400 max-w-2xl">
-            TorquePanel gives server owners, head admins, devs and staff the
-            tools they need to keep RP smooth, performance stable and drama
-            under control &mdash; without juggling ten different sites.
+          <p className="text-xs text-slate-400">
+            TorquePanel treats your city like a live service: queue, staff,
+            crashes and player behavior are all first-class. No more guessing
+            why the server feels off – you can see it.
           </p>
         </header>
 
-        {/* 3 KEY PILLARS (HOVERABLE CARDS) */}
-        <section className="mb-8 grid gap-4 md:grid-cols-3 text-xs text-slate-300">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 transition-transform duration-150 hover:-translate-y-1 hover:border-cyan-400/70 hover:shadow-lg hover:shadow-cyan-500/20">
-            <h2 className="mb-1 text-sm font-semibold text-slate-50">
-              Live server HUD
-            </h2>
-            <p>
-              Uptime, crashes, latency, CPU / RAM and resource impact in one
-              esports-style HUD that updates as your players connect, crash or
-              swap servers.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 transition-transform duration-150 hover:-translate-y-1 hover:border-cyan-400/70 hover:shadow-lg hover:shadow-cyan-500/20">
-            <h2 className="mb-1 text-sm font-semibold text-slate-50">
-              Player &amp; RP intelligence
-            </h2>
-            <p>
-              See who&apos;s actually driving your RP: loyal players, streamers,
-              gangs, cops, racers. Track sessions, retention and high-risk
-              players in one place.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 transition-transform duration-150 hover:-translate-y-1 hover:border-cyan-400/70 hover:shadow-lg hover:shadow-cyan-500/20">
-            <h2 className="mb-1 text-sm font-semibold text-slate-50">
-              Staff-first moderation
-            </h2>
-            <p>
-              Centralize reports, evidence, bans and notes so your staff can
-              react in seconds, not screenshots. Every action is logged and
-              auditable.
-            </p>
-          </div>
-        </section>
-
-        {/* LIVE CITY SNAPSHOT WITH SIMPLE GRAPH */}
-        <section className="mb-8 grid gap-6 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-300 md:grid-cols-[1.3fr_minmax(0,1fr)]">
-          <div>
-            <h2 className="mb-1 text-sm font-semibold text-slate-50">
-              Live city snapshot (example)
-            </h2>
-            <p className="mb-3 text-[11px] text-slate-400 max-w-xl">
-              This is how a typical TorquePanel city looks during an evening
-              peak: multiple shards online, different server types, one view for
-              owners and staff to work from.
-            </p>
-            <ul className="space-y-2">
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Multi-server control
-                </span>
-                <br />
-                See all your GTA / FiveM servers at once: main RP city,
-                whitelist-only city, race servers, dev shards and more.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Queue &amp; peak awareness
-                </span>
-                <br />
-                Understand where players are piling up so you can adjust slots,
-                scaling and restart windows intelligently.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  One panel for all roles
-                </span>
-                <br />
-                Owners, devs and staff can all look at the same data, filtered
-                to the level of access they&apos;re allowed.
-              </li>
-            </ul>
-          </div>
-
-          {/* right side: bar-style "graph" for server usage */}
-          <div className="rounded-xl border border-slate-800 bg-gradient-to-b from-slate-900 to-slate-950 p-4">
-            <div className="mb-2 flex items-center justify-between text-[11px] text-slate-300">
-              <span>Server usage by type</span>
-              <span className="text-slate-500">Last 24 hours (example)</span>
+        {/* INTERACTIVE SERVER TYPE TOGGLES */}
+        <section className="gta-card p-4 text-[11px] text-slate-300">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-1">
+              <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                Tune TorquePanel to your city style
+              </p>
+              <h2 className="text-sm font-semibold text-slate-50">
+                Roleplay? Drift? Freeroam? It adapts.
+              </h2>
             </div>
-            <div className="space-y-2 text-[11px]">
-              {serverUsage.map((row) => (
-                <div key={row.label}>
-                  <div className="mb-0.5 flex items-center justify-between">
-                    <span className="text-slate-300">{row.label}</span>
-                    <span className="text-slate-400">
-                      {row.value}% of players
-                    </span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-slate-800">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-emerald-400 transition-all duration-200 hover:brightness-110"
-                      style={{ width: `${row.value}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setScenario('rp')}
+                className={
+                  'rounded-full px-3 py-1.5 text-[11px] transition ' +
+                  (scenario === 'rp'
+                    ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30'
+                    : 'border border-slate-700 bg-slate-900/80 text-slate-200 hover:border-cyan-400 hover:text-cyan-300')
+                }
+              >
+                Whitelisted RP
+              </button>
+              <button
+                onClick={() => setScenario('drift')}
+                className={
+                  'rounded-full px-3 py-1.5 text-[11px] transition ' +
+                  (scenario === 'drift'
+                    ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30'
+                    : 'border border-slate-700 bg-slate-900/80 text-slate-200 hover:border-emerald-400 hover:text-emerald-300')
+                }
+              >
+                Drift / racing
+              </button>
+              <button
+                onClick={() => setScenario('freeroam')}
+                className={
+                  'rounded-full px-3 py-1.5 text-[11px] transition ' +
+                  (scenario === 'freeroam'
+                    ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/30'
+                    : 'border border-slate-700 bg-slate-900/80 text-slate-200 hover:border-sky-400 hover:text-sky-300')
+                }
+              >
+                Freeroam / cops &amp; robbers
+              </button>
             </div>
-            <p className="mt-3 text-[10px] text-slate-500">
-              In the live TorquePanel app, these bars are powered by your real
-              player sessions and heartbeat checks.
+          </div>
+
+          {/* Active scenario description */}
+          <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-3">
+            <p className="text-[10px] uppercase tracking-wide text-cyan-400">
+              {current.label}
             </p>
+            <h3 className="mt-1 text-sm font-semibold text-slate-50">
+              {current.title}
+            </h3>
+            <p className="mt-2 text-[11px] text-slate-400">{current.body}</p>
           </div>
         </section>
 
-        {/* FEATURE GROUPS: SERVER, PLAYERS, MODERATION, STAFF */}
-        <section className="space-y-6 text-xs text-slate-300">
-          {/* SERVER HEALTH */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
-            <h2 className="mb-1 text-sm font-semibold text-slate-50">
-              Server health &amp; performance
-            </h2>
-            <p className="mb-2 text-[11px] text-slate-400 max-w-xl">
-              Stop guessing why the city feels scuffed tonight. TorquePanel
-              gives you a full read on how your servers are behaving in real
-              time.
-            </p>
-            <ul className="grid gap-2 md:grid-cols-2">
-              <li>
-                <span className="font-semibold text-slate-100">Uptime map</span>
-                <br />
-                See uptime and restart history across all your boxes so you can
-                spot patterns before they turn into Discord riots.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Crash &amp; spike tracking
-                </span>
-                <br />
-                Track crash frequency, peak queues and ping spikes tied to
-                specific resources or updates.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Resource impact breakdown
-                </span>
-                <br />
-                Quickly see which scripts are eating CPU or causing errors so
-                devs know where to patch first.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Multi-server view
-                </span>
-                <br />
-                Monitor main city, whitelist city, race servers, dev servers and
-                more from the same panel.
-              </li>
-            </ul>
-          </div>
-
-          {/* PLAYER INTELLIGENCE */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
-            <h2 className="mb-1 text-sm font-semibold text-slate-50">
-              Player intelligence &amp; RP quality
-            </h2>
-            <p className="mb-2 text-[11px] text-slate-400 max-w-xl">
-              Go beyond &quot;how many joined&quot; and actually understand who&apos;s
-              building your city up &mdash; and who&apos;s tearing it down.
-            </p>
-            <ul className="grid gap-2 md:grid-cols-2">
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Player profiles
-                </span>
-                <br />
-                See playtime, last seen, roles, tags (cop, gang, medic,
-                streamer) and risk score in one glance.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Session timelines
-                </span>
-                <br />
-                Track when players connect, swap servers, get warned or banned
-                &mdash; so incidents make sense in context.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Retention &amp; loyalty
-                </span>
-                <br />
-                Measure how many new players stick around, how long they stay
-                and which RP paths keep them hooked.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  High-risk player detection
-                </span>
-                <br />
-                Spot players with stacked reports, repeated VDM / RDM or combat
-                logging before they ruin a full restart.
-              </li>
-            </ul>
-          </div>
-
-          {/* MODERATION WORKFLOWS */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
-            <h2 className="mb-1 text-sm font-semibold text-slate-50">
-              Moderation, reports &amp; bans
-            </h2>
-            <p className="mb-2 text-[11px] text-slate-400 max-w-xl">
-              Instead of chasing screenshots across Discord, keep all your city
-              enforcement in one place with full history.
-            </p>
-            <ul className="grid gap-2 md:grid-cols-2">
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Centralized report inbox
-                </span>
-                <br />
-                All in-game and staff reports flow into one feed with filters
-                for severity, location and rule type.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Evidence &amp; notes
-                </span>
-                <br />
-                Attach clips, IDs, timestamps and internal notes to each case so
-                staff decisions are clear and consistent.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Quick actions for staff
-                </span>
-                <br />
-                Kick, warn, temp-ban or permaban directly from the player
-                profile or report screen with templates.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Full audit log
-                </span>
-                <br />
-                Every action is logged with who did what and when, so owners can
-                review staff decisions later.
-              </li>
-            </ul>
-          </div>
-
-          {/* STAFF & OPERATIONS */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
-            <h2 className="mb-1 text-sm font-semibold text-slate-50">
-              Staff operations &amp; monetization
-            </h2>
-            <p className="mb-2 text-[11px] text-slate-400 max-w-xl">
-              Your city isn&apos;t just a game server &mdash; it&apos;s a live
-              operation. TorquePanel helps keep it funded and staffed.
-            </p>
-            <ul className="grid gap-2 md:grid-cols-2">
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Role-based access
-                </span>
-                <br />
-                Let helpers see what they need without giving them nuclear
-                buttons. Separate views for owners, leads and trial staff.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Donor &amp; package insights
-                </span>
-                <br />
-                Understand which perks actually convert and which donors keep
-                coming back without exposing full payment data to staff.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Maintenance &amp; restart planning
-                </span>
-                <br />
-                Use concurrency and incident data to choose restart windows that
-                don&apos;t nuke prime-time RP.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Multi-city support
-                </span>
-                <br />
-                Owners with multiple cities or test servers can track them all
-                from one TorquePanel account.
-              </li>
-            </ul>
-          </div>
+        {/* FEATURE GRID */}
+        <section className="grid gap-4 text-[11px] text-slate-300 md:grid-cols-3">
+          {[
+            {
+              label: 'City-wide analytics',
+              accent: 'text-cyan-400',
+              title: 'See your city like a minimap',
+              body:
+                'Peak hours, queue spikes, crash clusters and staff coverage at a glance. Tune restart times and events around when your Los Santos is actually alive.',
+            },
+            {
+              label: 'Staff-first tools',
+              accent: 'text-emerald-400',
+              title: 'Tickets that feel like an MDT',
+              body:
+                'Every report, warning and ban flows into a clean moderation queue. Staff can claim, resolve and leave notes without digging through Discord logs.',
+            },
+            {
+              label: 'Script insight',
+              accent: 'text-sky-400',
+              title: 'When a resource breaks, you know',
+              body:
+                'Watch which scripts are causing lag spikes, restarts or errors. See anticheat flags per resource, not just random console spam.',
+            },
+            {
+              label: 'Player intelligence',
+              accent: 'text-amber-400',
+              title: 'Know your whales and grinders',
+              body:
+                'Identify who plays the most, who gets reported the most and who always shows up to wars, robberies or races.',
+            },
+            {
+              label: 'Multi-server ready',
+              accent: 'text-rose-400',
+              title: 'Hubs, dev servers & events',
+              body:
+                'Track main city, dev / staging and special event servers from one panel. See where your players actually go when you open new shards.',
+            },
+            {
+              label: 'RP-focused',
+              accent: 'text-fuchsia-400',
+              title: 'Cops, gangs, EMS and streamers',
+              body:
+                'Tag and filter players by role and see if your RP ecosystem is balanced or tilted to only one group.',
+            },
+          ].map((card, idx) => (
+            <div
+              key={idx}
+              className="gta-card group transform p-4 transition duration-200 hover:-translate-y-1 hover:border-cyan-400 hover:shadow-cyan-500/30"
+            >
+              <p
+                className={
+                  'text-[10px] uppercase tracking-wide ' + card.accent
+                }
+              >
+                {card.label}
+              </p>
+              <h2 className="mt-1 text-sm font-semibold text-slate-50">
+                {card.title}
+              </h2>
+              <p className="mt-2 text-slate-400">{card.body}</p>
+              <div className="mt-3 h-[2px] w-10 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 opacity-60 group-hover:opacity-100" />
+            </div>
+          ))}
         </section>
-      </div>
+      </main>
     </div>
   )
 }

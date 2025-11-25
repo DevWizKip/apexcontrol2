@@ -1,382 +1,421 @@
 // src/pages/HomePage.jsx
-// GTA / FiveM themed marketing homepage with a Lunar-style vibe, branded as TorquePanel,
-// now with proper sections for Features, Analytics, and Security.
-
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useAuth } from '../auth/AuthContext'
 
 function HomePage() {
+  const navigate = useNavigate()
+  const { isLoggedIn } = useAuth()
+  const [persona, setPersona] = useState('owner') // "owner" | "staff" | "dev"
+
+  const personaCopy = {
+    owner: {
+      label: 'Server owner',
+      title: 'See your GTA city like a business, not a black box.',
+      body:
+        'Track peak hours, stability, staff performance and player retention. Make decisions on restarts, events and whitelist waves using real data – not Discord vibes.',
+    },
+    staff: {
+      label: 'Staff lead / head admin',
+      title: 'Keep staff tickets, bans and reports under control.',
+      body:
+        'One queue for reports, warnings and bans. Claim tickets, leave notes and track who is actually handling the mess when the city is full.',
+    },
+    dev: {
+      label: 'Developer / scripter',
+      title: 'Find broken scripts before players start screaming.',
+      body:
+        'See crash clusters, slow resources and anticheat spam grouped by script. Roll back bad builds faster and keep the city stable during big content drops.',
+    },
+  }
+
+  const activePersona = personaCopy[persona]
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-950 to-black text-slate-50">
-      {/* Top gradient + glow background */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* soft neon blobs */}
-        <div className="absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-cyan-500/20 blur-3xl" />
-        <div className="absolute top-40 -left-32 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
-        <div className="absolute top-80 -right-40 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
-      </div>
+    <div className="gta-page">
+      {/* top nav */}
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-400">
+            <span className="text-[11px] font-bold text-slate-950">TP</span>
+          </div>
+          <div className="flex flex-col leading-tight">
+            <span className="text-sm font-semibold text-slate-50">
+              TorquePanel
+            </span>
+            <span className="text-[10px] uppercase tracking-[0.12em] text-cyan-400">
+              FiveM / GTA Server Panel
+            </span>
+          </div>
+        </div>
 
-      {/* Page content wrapper */}
-      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col px-4 pb-16 pt-6 sm:px-6 lg:px-8">
-        {/* NAVBAR */}
-        <header className="mb-10 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-fuchsia-500 shadow-lg shadow-cyan-500/30">
-              <span className="text-sm font-bold tracking-tight">T</span>
+        <nav className="hidden items-center gap-4 text-[11px] text-slate-300 md:flex">
+          <button
+            onClick={() => navigate('/features')}
+            className="hover:text-cyan-300"
+          >
+            Features
+          </button>
+          <button
+            onClick={() => navigate('/analytics')}
+            className="hover:text-cyan-300"
+          >
+            Analytics
+          </button>
+          <button
+            onClick={() => navigate('/security')}
+            className="hover:text-cyan-300"
+          >
+            Security
+          </button>
+          <button
+            onClick={() => navigate('/pricing')}
+            className="hover:text-cyan-300"
+          >
+            Pricing
+          </button>
+
+          {/* When NOT logged in → show Login + Sign up */}
+          {!isLoggedIn && (
+            <>
+              <button
+                onClick={() => navigate('/login')}
+                className="hover:text-cyan-300"
+              >
+                Login
+              </button>
+              <button
+                onClick={() => navigate('/signup')}
+                className="rounded-full border border-cyan-500/70 bg-cyan-500/10 px-3 py-1.5 text-[11px] font-medium text-cyan-300 hover:bg-cyan-500/20"
+              >
+                Sign up
+              </button>
+            </>
+          )}
+
+          {/* When logged in → show Account instead */}
+          {isLoggedIn && (
+            <button
+              onClick={() => navigate('/account')}
+              className="rounded-full border border-emerald-500/70 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-medium text-emerald-300 hover:bg-emerald-500/20"
+            >
+              Account
+            </button>
+          )}
+
+          <button
+            onClick={() => navigate('/app/dashboard')}
+            className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] font-medium text-slate-100 hover:border-cyan-400 hover:text-cyan-300"
+          >
+            Launch admin panel
+          </button>
+        </nav>
+      </header>
+
+      {/* HERO */}
+      <main className="mx-auto flex max-w-6xl flex-col gap-8 px-4 pb-16 pt-4 md:flex-row md:items-center">
+        {/* Left: headline */}
+        <section className="gta-hero-glow relative z-10 flex-1 space-y-4">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-cyan-400">
+            Los Santos ready
+          </p>
+          <h1 className="max-w-xl text-3xl font-semibold leading-tight text-slate-50 md:text-4xl">
+            The control room
+            <span className="text-cyan-400"> your GTA RP city</span> actually
+            deserves.
+          </h1>
+          <p className="max-w-md text-xs text-slate-300 md:text-sm">
+            TorquePanel gives FiveM &amp; GTA server owners live insight into
+            queue, crashes, staff actions and player behavior. Built for serious
+            roleplay cities that run deep whitelists, custom scripts and full
+            staff teams.
+          </p>
+
+          <div className="flex flex-wrap gap-3 pt-2 text-[11px]">
+            <button
+              onClick={() => navigate('/app/dashboard')}
+              className="rounded-full bg-gradient-to-r from-cyan-500 to-emerald-400 px-5 py-2 font-medium text-slate-950 shadow-lg shadow-cyan-500/30 hover:brightness-110"
+            >
+              View live demo
+            </button>
+            <button
+              onClick={() => navigate('/pricing')}
+              className="rounded-full border border-slate-700 bg-slate-950 px-4 py-2 text-slate-100 hover:border-cyan-400 hover:text-cyan-300"
+            >
+              View pricing
+            </button>
+          </div>
+
+          {/* GTA-style stats row */}
+          <div className="mt-4 flex flex-wrap gap-3 text-[11px]">
+            <div className="gta-card flex min-w-[150px] flex-1 flex-col gap-1 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                Live RP cities
+              </p>
+              <p className="text-base font-semibold text-cyan-400">320+</p>
+              <p className="text-[10px] text-slate-500">
+                Using TorquePanel to watch crashes, queue and staff.
+              </p>
             </div>
-            <div className="flex flex-col leading-tight">
-              <span className="text-sm font-semibold tracking-wide">
-                TorquePanel
-              </span>
-              <span className="text-[11px] text-slate-400">
-                FiveM / GTA server control panel
-              </span>
+            <div className="gta-card flex min-w-[150px] flex-1 flex-col gap-1 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                Peak players watched
+              </p>
+              <p className="text-base font-semibold text-emerald-400">
+                18,400+
+              </p>
+              <p className="text-[10px] text-slate-500">
+                Across whitelisted, cops-and-robbers and drift servers.
+              </p>
             </div>
           </div>
 
-          <nav className="hidden items-center gap-6 text-xs text-slate-300 md:flex">
-  <Link to="/features" className="hover:text-slate-50">
-    Features
-  </Link>
-  <Link to="/analytics" className="hover:text-slate-50">
-    Analytics
-  </Link>
-  <Link to="/security" className="hover:text-slate-50">
-    Security
-  </Link>
-  <Link to="/docs" className="hover:text-slate-50">
-    Docs
-  </Link>
-</nav>
+          {/* “GTA vibe” bullet list */}
+          <ul className="mt-3 grid max-w-md gap-2 text-[11px] text-slate-300 md:grid-cols-2">
+            <li className="flex items-start gap-2">
+              <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-cyan-400" />
+              <span>
+                See when your city actually peaks – per hour, per district and
+                per whitelist role.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span>
+                Track staff claims, warnings and bans like an in-game MDT, not
+                a messy Discord log.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-sky-400" />
+              <span>
+                Catch broken scripts and anticheat flags before your city
+                explodes in chat.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-amber-400" />
+              <span>
+                Designed for PD, EMS, gangs, racers &amp; streamers – not just
+                vanilla freeroam.
+              </span>
+            </li>
+          </ul>
+        </section>
 
-          <div className="flex items-center gap-2 text-xs">
-            <Link
-              to="/login"
-              className="rounded-full border border-slate-700/80 px-3 py-1.5 text-slate-200 hover:border-slate-500 hover:bg-slate-900/70"
-            >
-              Log in
-            </Link>
-            <Link
-              to="/signup"
-              className="rounded-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 px-4 py-1.5 text-xs font-semibold text-slate-950 shadow-lg shadow-cyan-500/30 hover:brightness-110"
-            >
-              Start for free
-            </Link>
-          </div>
-        </header>
-
-        {/* HERO SECTION */}
-        <main className="flex flex-1 flex-col items-center gap-10 lg:flex-row lg:items-stretch">
-          {/* Left side: text */}
-          <section className="flex flex-1 flex-col justify-center gap-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/40 bg-slate-950/80 px-2 py-1 text-[11px] text-cyan-100">
-              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              <span>Real-time control for your FiveM city</span>
+        {/* Right: fake “in-game panel” hero card */}
+        <section className="relative z-10 mt-4 flex flex-1 justify-center md:mt-0">
+          <div className="gta-card relative w-full max-w-md overflow-hidden px-4 py-4">
+            <div className="mb-2 flex items-center justify-between text-[10px] text-slate-400">
+              <span className="uppercase tracking-[0.2em] text-sky-400">
+                City overview
+              </span>
+              <span>Los Santos · Main RP</span>
             </div>
 
-            <div>
-              <h1 className="text-balance text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
-                The server panel your{' '}
-                <span className="bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-emerald-400 bg-clip-text text-transparent">
-                  RP city deserves
-                </span>
-                .
-              </h1>
-              <p className="mt-3 max-w-xl text-sm text-slate-300">
-                TorquePanel gives you esports-grade dashboards, player intel,
-                and moderation tools for GTA 5 / FiveM servers. See every spike,
-                crash, and rulebreak before your city feels it.
-              </p>
-            </div>
-
-            {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-3 text-xs">
-              <Link
-                to="/signup"
-                className="rounded-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 px-5 py-2 font-semibold text-slate-950 shadow-lg shadow-cyan-500/30 hover:brightness-110"
-              >
-                Launch my control panel
-              </Link>
-              <Link
-                to="/app/dashboard"
-                className="rounded-full border border-slate-700/80 bg-slate-950/70 px-4 py-2 text-slate-100 hover:border-cyan-400/70 hover:bg-slate-900/80"
-              >
-                View live demo
-              </Link>
-              <p className="w-full text-[11px] text-slate-400 sm:w-auto">
-                No credit card • Works with FiveM / txAdmin setups
-              </p>
-            </div>
-
-            {/* host types */}
-            <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-300">
-              <div className="flex items-center gap-1 rounded-full border border-slate-700/70 bg-slate-950/70 px-2 py-1">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span>Windows host</span>
-              </div>
-              <div className="flex items-center gap-1 rounded-full border border-slate-700/70 bg-slate-950/70 px-2 py-1">
-                <span className="h-2 w-2 rounded-full bg-sky-400" />
-                <span>Linux VPS</span>
-              </div>
-              <div className="flex items-center gap-1 rounded-full border border-slate-700/70 bg-slate-950/70 px-2 py-1">
-                <span className="h-2 w-2 rounded-full bg-fuchsia-400" />
-                <span>Dedicated machines</span>
+            {/* faux skyline bar */}
+            <div className="mb-3 h-16 rounded-xl bg-gradient-to-t from-slate-950 via-slate-900 to-slate-800">
+              <div className="flex h-full items-end gap-1 px-2 pb-2">
+                <div className="h-6 w-3 rounded-sm bg-slate-600" />
+                <div className="h-9 w-3 rounded-sm bg-slate-500" />
+                <div className="h-4 w-3 rounded-sm bg-slate-700" />
+                <div className="h-10 w-3 rounded-sm bg-slate-400" />
+                <div className="h-7 w-3 rounded-sm bg-slate-500" />
+                <div className="h-5 w-3 rounded-sm bg-slate-600" />
+                <div className="h-9 w-3 rounded-sm bg-slate-500" />
               </div>
             </div>
-          </section>
 
-          {/* Right side: fake launcher / dashboard card */}
-          <section className="flex flex-1 items-center justify-center lg:justify-end">
-            <div className="relative w-full max-w-md">
-              {/* glow behind card */}
-              <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-cyan-500/40 via-fuchsia-500/30 to-emerald-500/30 blur-xl" />
-              <div className="relative rounded-3xl border border-slate-800/80 bg-slate-950/90 p-4 shadow-2xl shadow-black/60 backdrop-blur">
-                {/* top bar (like a mini launcher) */}
-                <div className="mb-3 flex items-center justify-between text-[11px] text-slate-300">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-                    <span className="font-semibold">Main RP City · Online</span>
-                  </div>
-                  <span className="text-slate-500">TorquePanel preview</span>
-                </div>
-
-                {/* faux dashboard content */}
-                <div className="grid gap-3">
-                  {/* row 1 - KPIs */}
-                  <div className="grid grid-cols-3 gap-2 text-[11px]">
-                    <div className="rounded-xl border border-slate-800 bg-slate-900/80 px-2 py-2">
-                      <p className="text-slate-400">Players</p>
-                      <p className="text-lg font-semibold text-slate-50">128</p>
-                      <p className="text-[10px] text-emerald-400">
-                        Peak 212 tonight
-                      </p>
-                    </div>
-                    <div className="rounded-xl border border-slate-800 bg-slate-900/80 px-2 py-2">
-                      <p className="text-slate-400">Crashes</p>
-                      <p className="text-lg font-semibold text-slate-50">0</p>
-                      <p className="text-[10px] text-emerald-400">Stable</p>
-                    </div>
-                    <div className="rounded-xl border border-slate-800 bg-slate-900/80 px-2 py-2">
-                      <p className="text-slate-400">Reports</p>
-                      <p className="text-lg font-semibold text-slate-50">14</p>
-                      <p className="text-[10px] text-amber-300">3 urgent</p>
-                    </div>
-                  </div>
-
-                  {/* row 2 - mini chart placeholder */}
-                  <div className="rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 px-3 py-3">
-                    <div className="mb-1 flex items-center justify-between text-[11px] text-slate-300">
-                      <span>Concurrency · last 12h</span>
-                      <span className="text-slate-500">132 peak</span>
-                    </div>
-                    <div className="h-20 rounded-lg bg-[radial-gradient(circle_at_top,_rgba(45,212,191,0.35),transparent_55%),radial-gradient(circle_at_bottom,_rgba(14,165,233,0.3),transparent_55%)]" />
-                  </div>
-
-                  {/* row 3 - incidents list */}
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900/80 px-3 py-3">
-                    <div className="mb-1 flex items-center justify-between text-[11px]">
-                      <span className="text-slate-300">Live incidents</span>
-                      <span className="text-slate-500">Moderation</span>
-                    </div>
-                    <ul className="space-y-1 text-[11px] text-slate-300">
-                      <li className="flex items-center justify-between">
-                        <span className="truncate">
-                          TTV_Nitro · VDM in Legion
-                        </span>
-                        <span className="ml-2 rounded-full bg-amber-500/20 px-2 py-0.5 text-amber-200">
-                          High
-                        </span>
-                      </li>
-                      <li className="flex items-center justify-between">
-                        <span className="truncate">
-                          NovaRP · OOC in PD holding
-                        </span>
-                        <span className="ml-2 rounded-full bg-sky-500/20 px-2 py-0.5 text-sky-200">
-                          Medium
-                        </span>
-                      </li>
-                      <li className="flex items-center justify-between">
-                        <span className="truncate">
-                          DriftKing · Street race at Vinewood
-                        </span>
-                        <span className="ml-2 rounded-full bg-emerald-500/20 px-2 py-0.5 text-emerald-200">
-                          Watching
-                        </span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                {/* bottom hint */}
-                <p className="mt-3 text-[10px] text-slate-500">
-                  Actual in-app UI is even denser and fully real-time. This is
-                  just a taste.
+            {/* mini stats row */}
+            <div className="grid grid-cols-3 gap-2 text-[10px]">
+              <div className="rounded-lg bg-slate-900/80 px-2 py-1.5">
+                <p className="text-slate-400">Players</p>
+                <p className="text-sm font-semibold text-slate-50">
+                  102<span className="text-[9px] text-slate-500">/128</span>
+                </p>
+                <p className="text-[9px] text-emerald-400">
+                  Queue · 18 waiting
                 </p>
               </div>
+              <div className="rounded-lg bg-slate-900/80 px-2 py-1.5">
+                <p className="text-slate-400">Stability</p>
+                <p className="text-sm font-semibold text-emerald-400">
+                  99.7%
+                </p>
+                <p className="text-[9px] text-slate-500">No crashes · 24h</p>
+              </div>
+              <div className="rounded-lg bg-slate-900/80 px-2 py-1.5">
+                <p className="text-slate-400">Staff</p>
+                <p className="text-sm font-semibold text-slate-50">
+                  6 online
+                </p>
+                <p className="text-[9px] text-sky-400">3 active tickets</p>
+              </div>
             </div>
-          </section>
-        </main>
 
-        {/* FEATURES SECTION */}
-        <section
-          id="features"
-          className="mt-16 rounded-2xl border border-slate-800 bg-slate-950/70 p-5 text-xs text-slate-300"
-        >
-          <h2 className="mb-1 text-sm font-semibold text-slate-50">
-            Built for serious GTA / FiveM servers
-          </h2>
-          <p className="mb-4 text-[11px] text-slate-400">
-            TorquePanel replaces basic panels and half-broken spreadsheets with
-            one place to see your city&apos;s health, from resources to roleplay.
-          </p>
+            {/* mini ticket feed */}
+            <div className="mt-3 space-y-1.5 text-[10px]">
+              <div className="flex items-center justify-between rounded-lg bg-slate-900/80 px-2 py-1.5">
+                <div className="flex flex-col">
+                  <span className="text-slate-50">
+                    #4821 · VDM near Legion
+                  </span>
+                  <span className="text-[9px] text-slate-500">
+                    TTV_Nitro reported by NovaRP · 4 min ago
+                  </span>
+                </div>
+                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[9px] text-amber-300">
+                  High
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-slate-900/80 px-2 py-1.5">
+                <div className="flex flex-col">
+                  <span className="text-slate-50">
+                    Script error · police_mdt
+                  </span>
+                  <span className="text-[9px] text-slate-500">
+                    Restarted by Karma · stable 12m
+                  </span>
+                </div>
+                <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-[9px] text-sky-300">
+                  Script
+                </span>
+              </div>
+            </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3">
-              <h3 className="mb-1 text-sm font-semibold text-slate-50">
-                Live server HUD
-              </h3>
-              <p>
-                Uptime, crash history, latency, CPU / RAM and resource impact in
-                one esports-style HUD that updates as your players connect.
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3">
-              <h3 className="mb-1 text-sm font-semibold text-slate-50">
-                Player intelligence
-              </h3>
-              <p>
-                See sessions, risk scores, and tags for streamers, cops,
-                racers, gangs &mdash; so you reward the right people and catch
-                trouble early.
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3">
-              <h3 className="mb-1 text-sm font-semibold text-slate-50">
-                Staff-first moderation
-              </h3>
-              <p>
-                Centralize reports, evidence, bans and staff notes, instead of
-                digging through Discord channels at 3AM.
-              </p>
-            </div>
+            <p className="mt-3 text-[9px] text-slate-500">
+              Live demo shows simulated data. In a real deployment, these tiles
+              stay synced to your FiveM console, database and staff tools.
+            </p>
           </div>
         </section>
+      </main>
 
-        {/* ANALYTICS SECTION */}
-        <section
-          id="analytics"
-          className="mt-10 grid gap-6 rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-xs text-slate-300 md:grid-cols-[1.4fr_minmax(0,1fr)]"
-        >
-          <div>
-            <h2 className="mb-1 text-sm font-semibold text-slate-50">
-              Analytics built for RP cities, not ad agencies
+      {/* Persona switcher */}
+      <section className="mx-auto max-w-6xl px-4 pb-10">
+        <div className="gta-card flex flex-col gap-4 px-4 py-4 text-[11px] text-slate-300 md:flex-row md:items-center md:justify-between">
+          <div className="max-w-md space-y-1">
+            <p className="text-[10px] uppercase tracking-wide text-slate-400">
+              Who are you in the city?
+            </p>
+            <h2 className="text-sm font-semibold text-slate-50">
+              TorquePanel speaks to owners, staff leads and devs.
             </h2>
-            <p className="mb-3 text-[11px] text-slate-400">
-              Track how your city actually feels to play: concurrency, queue
-              pain, crashes, and RP hotspots &mdash; not just vanity numbers.
-            </p>
-
-            <ul className="space-y-2">
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Concurrency &amp; peaks
-                </span>
-                <br />
-                Understand when your city is busiest, so you can schedule
-                restarts and major events without nuking RP.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Retention &amp; loyalty
-                </span>
-                <br />
-                See which players keep coming back, which gangs or jobs keep
-                them hooked, and where new players drop.
-              </li>
-              <li>
-                <span className="font-semibold text-slate-100">
-                  Incident heatmaps
-                </span>
-                <br />
-                Spot spikes in reports, VDM, combat logging or toxic behavior
-                before it bleeds into your whole community.
-              </li>
-            </ul>
-          </div>
-
-          {/* mini analytics visual */}
-          <div className="rounded-xl border border-slate-800 bg-gradient-to-b from-slate-900 to-slate-950 p-3">
-            <div className="mb-2 flex items-center justify-between text-[11px] text-slate-300">
-              <span>Sample city analytics</span>
-              <span className="text-slate-500">Last 7 days</span>
-            </div>
-            <div className="space-y-2 text-[11px]">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Average nightly peak</span>
-                <span className="font-semibold text-emerald-300">166 players</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">New players retained</span>
-                <span className="font-semibold text-cyan-300">68%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Reports per 100 players</span>
-                <span className="font-semibold text-amber-300">7.4</span>
-              </div>
-            </div>
-            <div className="mt-3 h-20 rounded-lg bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.35),transparent_55%),radial-gradient(circle_at_bottom,_rgba(52,211,153,0.3),transparent_55%)]" />
-            <p className="mt-2 text-[10px] text-slate-500">
-              Real metrics in-app are driven by your live logs and server
-              events.
+            <p className="text-slate-400">
+              Tap through the roles to see how the panel feels from each
+              perspective.
             </p>
           </div>
-        </section>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setPersona('owner')}
+              className={
+                'rounded-full px-3 py-1.5 text-[10px] transition ' +
+                (persona === 'owner'
+                  ? 'bg-cyan-500 text-slate-950'
+                  : 'border border-slate-700 bg-slate-900/80 text-slate-200 hover:border-cyan-400 hover:text-cyan-300')
+              }
+            >
+              Server owner
+            </button>
+            <button
+              onClick={() => setPersona('staff')}
+              className={
+                'rounded-full px-3 py-1.5 text-[10px] transition ' +
+                (persona === 'staff'
+                  ? 'bg-emerald-500 text-slate-950'
+                  : 'border border-slate-700 bg-slate-900/80 text-slate-200 hover:border-emerald-400 hover:text-emerald-300')
+              }
+            >
+              Staff lead
+            </button>
+            <button
+              onClick={() => setPersona('dev')}
+              className={
+                'rounded-full px-3 py-1.5 text-[10px] transition ' +
+                (persona === 'dev'
+                  ? 'bg-sky-500 text-slate-950'
+                  : 'border border-slate-700 bg-slate-900/80 text-slate-200 hover:border-sky-400 hover:text-sky-300')
+              }
+            >
+              Dev / scripter
+            </button>
+          </div>
+        </div>
 
-        {/* SECURITY SECTION */}
-        <section
-          id="security"
-          className="mt-10 rounded-2xl border border-slate-800 bg-slate-950/90 p-5 text-xs text-slate-300"
-        >
-          <h2 className="mb-1 text-sm font-semibold text-slate-50">
-            Security built for staff teams, not just sysadmins
-          </h2>
-          <p className="mb-4 text-[11px] text-slate-400">
-            TorquePanel is designed so you can safely share control with your
-            staff without giving everyone full access to the box.
+        <div className="mt-3 rounded-2xl border border-slate-800 bg-slate-950/90 px-4 py-4 text-[11px] text-slate-300">
+          <p className="text-[10px] uppercase tracking-wide text-cyan-400">
+            {activePersona.label}
           </p>
+          <h3 className="mt-1 text-sm font-semibold text-slate-50">
+            {activePersona.title}
+          </h3>
+          <p className="mt-2 text-slate-400">{activePersona.body}</p>
+        </div>
+      </section>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3">
-              <h3 className="mb-1 text-sm font-semibold text-slate-50">
-                Role-based access
-              </h3>
-              <p>
-                Limit who can restart services, ban players, edit configs or see
-                monetization, so&apos;s there&apos;s no &quot;oops I nuked the city&quot;
-                moments.
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3">
-              <h3 className="mb-1 text-sm font-semibold text-slate-50">
-                Full audit trails
-              </h3>
-              <p>
-                Every kick, ban, config change and restart is logged with who,
-                when and why, so owner decisions don&apos;t get lost in Discord.
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3">
-              <h3 className="mb-1 text-sm font-semibold text-slate-50">
-                Safe by design
-              </h3>
-              <p>
-                Read-only views for helpers, elevated modes for leads, and
-                sane defaults tuned for GTA RP communities, not generic web
-                apps.
-              </p>
-            </div>
+      {/* Pricing teaser */}
+      <section className="mx-auto max-w-6xl px-4 pb-16">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-400">
+              Simple pricing
+            </p>
+            <h2 className="text-sm font-semibold text-slate-50">
+              Start small and scale up as your GTA city grows.
+            </h2>
+            <p className="text-[11px] text-slate-400">
+              No credit card required for the starter tier. Upgrade only when
+              your city actually fills up.
+            </p>
           </div>
-        </section>
-      </div>
+          <button
+            onClick={() => navigate('/pricing')}
+            className="self-start rounded-full bg-gradient-to-r from-cyan-500 to-emerald-400 px-4 py-2 text-[11px] font-medium text-slate-950 shadow-lg shadow-cyan-500/30 hover:brightness-110"
+          >
+            See full pricing
+          </button>
+        </div>
+
+        <div className="mt-4 grid gap-3 text-[11px] text-slate-300 md:grid-cols-3">
+          <div className="gta-card p-4">
+            <p className="text-[10px] uppercase tracking-wide text-slate-400">
+              Starter
+            </p>
+            <h3 className="mt-1 text-sm font-semibold text-slate-50">
+              For growing cities
+            </h3>
+            <p className="mt-2 text-slate-400">
+              Perfect for new GTA cities finding their rhythm. Core analytics,
+              player browser and moderation queue.
+            </p>
+          </div>
+          <div className="gta-card border-cyan-400/60 p-4 shadow-lg shadow-cyan-500/30">
+            <p className="text-[10px] uppercase tracking-wide text-cyan-400">
+              City
+            </p>
+            <h3 className="mt-1 text-sm font-semibold text-slate-50">
+              For established RP servers
+            </h3>
+            <p className="mt-2 text-slate-400">
+              Full analytics, staff tools, script insight and multi-server
+              support for your main city + dev server.
+            </p>
+          </div>
+          <div className="gta-card p-4">
+            <p className="text-[10px] uppercase tracking-wide text-emerald-400">
+              Network
+            </p>
+            <h3 className="mt-1 text-sm font-semibold text-slate-50">
+              For full GTA networks
+            </h3>
+            <p className="mt-2 text-slate-400">
+              Multi-city networks, event servers and special shards. Custom
+              support and advanced integrations.
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
