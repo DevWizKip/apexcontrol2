@@ -1,90 +1,57 @@
 // src/app/AppShell.jsx
-// This component is the "frame" around the dashboard area.
-// It shows the sidebar + top header, and renders child pages with <Outlet />.
+// Layout wrapper for the logged-in app area (dashboard, players, etc.)
 
-import { NavLink, Outlet, Link } from 'react-router-dom'
-
-const navItems = [
-  { to: '/app/dashboard', label: 'Dashboard' },
-  { to: '/app/players', label: 'Players' },
-  { to: '/app/moderation', label: 'Moderation' },
-]
+import { NavLink, Outlet } from 'react-router-dom'
 
 function AppShell() {
+  const navItems = [
+    { to: '/app/dashboard', label: 'Dashboard' },
+    { to: '/app/players', label: 'Players' },
+    { to: '/app/moderation', label: 'Moderation' },
+    { to: '/app/server-logs', label: 'Server logs' },
+  ]
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 flex">
-      {/* Sidebar on the left */}
-      <aside className="hidden md:flex w-60 flex-col border-r border-slate-900 bg-slate-950/80">
-        {/* Logo */}
-        <div className="h-16 flex items-center px-4 border-b border-slate-900">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500 text-slate-950 font-bold">
-              A
-            </span>
-            <span className="font-semibold tracking-wide text-sm">
-              ApexControl
-            </span>
-          </Link>
-        </div>
-
-        {/* Main navigation links */}
-        <nav className="flex-1 px-2 py-4 space-y-1 text-sm">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                [
-                  'flex items-center gap-2 rounded-md px-3 py-2',
-                  isActive
-                    ? 'bg-slate-900 text-cyan-400'
-                    : 'text-slate-300 hover:bg-slate-900/60',
-                ].join(' ')
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* Bottom area in sidebar (server name etc.) */}
-        <div className="px-4 py-3 border-t border-slate-900 text-[11px] text-slate-400">
-          <div className="font-semibold text-slate-200">Main RP City</div>
-          <div>Server ID: main-rp-city</div>
-        </div>
-      </aside>
-
-      {/* Right side: header + main content */}
-      <div className="flex-1 flex flex-col">
-        {/* Top header bar */}
-        <header className="h-14 flex items-center justify-between border-b border-slate-900 bg-slate-950/80 px-4">
-          <div className="md:hidden flex items-center gap-2">
-            {/* On mobile, just show a simple title for now */}
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500 text-slate-950 font-bold">
-              A
-            </span>
-            <span className="font-semibold text-sm">ApexControl</span>
+    <div className="min-h-screen bg-slate-950 text-slate-50">
+      <div className="mx-auto flex max-w-6xl gap-4 px-4 py-6 sm:px-6 lg:px-8">
+        {/* SIDEBAR */}
+        <aside className="w-44 shrink-0">
+          <div className="mb-4">
+            <p className="text-xs font-semibold tracking-wide text-slate-200">
+              TorquePanel
+            </p>
+            <p className="text-[11px] text-slate-500">
+              GTA / FiveM server tools
+            </p>
           </div>
+          <nav className="space-y-1 text-xs">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  [
+                    'flex items-center justify-between rounded-lg px-3 py-1.5 transition-colors',
+                    isActive
+                      ? 'bg-slate-900 text-cyan-300 border border-cyan-500/50'
+                      : 'text-slate-300 hover:bg-slate-900/60 hover:text-cyan-200 border border-transparent',
+                  ].join(' ')
+                }
+              >
+                <span>{item.label}</span>
+                {/* small indicator dot */}
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-600" />
+              </NavLink>
+            ))}
+          </nav>
+        </aside>
 
-          <div className="hidden md:block text-xs text-slate-400">
-            {/* This text is only visual for now, not functional */}
-            Connected as demo admin · Main RP City
-          </div>
-
-          {/* Fake user menu area */}
-          <div className="flex items-center gap-3 text-xs">
-            <span className="text-slate-300">demo@apexcontrol.local</span>
-            <button className="rounded-full w-7 h-7 bg-slate-800 text-[11px]">
-              AC
-            </button>
-          </div>
-        </header>
-
-        {/* Main content area where child pages are rendered */}
-        <main className="flex-1 p-4 md:p-6">
-          {/* Outlet = where nested routes (dashboard, players, etc.) appear */}
-          <Outlet />
-        </main>
+        {/* MAIN CONTENT */}
+      <main className="flex-1">
+  <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-300">
+    <Outlet />
+  </div>
+</main>
       </div>
     </div>
   )
