@@ -1,249 +1,298 @@
 // src/app/ServerLogsPage.jsx
-// Demo server logs view for TorquePanel
-
-import { useState, useMemo } from 'react'
-
-const demoLogs = [
-  {
-    id: 1,
-    time: '2024-06-12 18:22:41',
-    level: 'info',
-    source: 'Main RP',
-    category: 'restart',
-    message: 'Scheduled soft restart completed in 31s.',
-  },
-  {
-    id: 2,
-    time: '2024-06-12 18:20:09',
-    level: 'warn',
-    source: 'Anticheat',
-    category: 'anticheat',
-    message: 'Flagged possible speedhack: TTV_Nitro (veh: elegy).',
-  },
-  {
-    id: 3,
-    time: '2024-06-12 18:18:03',
-    level: 'error',
-    source: 'Resource: legacy_vehicleshop',
-    category: 'script',
-    message: 'Script error: attempt to index a nil value (buyVehicle.lua:142).',
-  },
-  {
-    id: 4,
-    time: '2024-06-12 18:15:10',
-    level: 'info',
-    source: 'Queue',
-    category: 'queue',
-    message: 'Queue peak 64 players · average wait 3m 20s.',
-  },
-  {
-    id: 5,
-    time: '2024-06-12 18:12:29',
-    level: 'warn',
-    source: 'Player report',
-    category: 'report',
-    message: 'New report: #8421 · DriftKing reported for VDM near Legion.',
-  },
-  {
-    id: 6,
-    time: '2024-06-12 18:10:17',
-    level: 'info',
-    source: 'Resource: police_mdt',
-    category: 'script',
-    message: 'Resource restarted by staff: Karma.',
-  },
-  {
-    id: 7,
-    time: '2024-06-12 18:06:02',
-    level: 'error',
-    source: 'Database',
-    category: 'db',
-    message: 'Slow query detected (players table – 2.4s).',
-  },
-  {
-    id: 8,
-    time: '2024-06-12 18:02:45',
-    level: 'info',
-    source: 'Staff',
-    category: 'staff',
-    message: 'Karma claimed ticket #8416 (OOC in PD holding).',
-  },
-  {
-    id: 9,
-    time: '2024-06-12 17:58:01',
-    level: 'warn',
-    source: 'Anticheat',
-    category: 'anticheat',
-    message: 'Unusual damage pattern from player NovaRP near apartments.',
-  },
-  {
-    id: 10,
-    time: '2024-06-12 17:54:33',
-    level: 'info',
-    source: 'Main RP',
-    category: 'join',
-    message: 'Player TTV_Nitro connected · ping 41ms · slot 96/128.',
-  },
-]
+import { useMemo, useState } from 'react'
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from 'recharts'
+import { serverLogs } from '../data/serverData'
 
 function ServerLogsPage() {
-  const [levelFilter, setLevelFilter] = useState('all')
-  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [levelFilter, setLevelFilter] = useState('all') // all | info | warn | error
   const [search, setSearch] = useState('')
+  const [selectedLog, setSelectedLog] = useState(null)
+
+  const levelCounts = useMemo(() => {
+    const counts = { info: 0, warn: 0, error: 0 }
+    serverLogs.forEach((log) => {
+      if (counts[log.level] != null) counts[log.level]++
+    })
+    return [
+      { level: 'info', label: 'Info', value: counts.info },
+      { level: 'warn', label: 'Warnings', value: counts.warn },
+      { level: 'error', label: 'Errors', value: counts.error },
+    ]
+  }, [])
 
   const filteredLogs = useMemo(() => {
-    return demoLogs.filter((log) => {
-      if (levelFilter !== 'all' && log.level !== levelFilter) return false
-      if (categoryFilter !== 'all' && log.category !== categoryFilter)
-        return false
-      if (search.trim()) {
-        const term = search.toLowerCase()
-        const text =
-          `${log.time} ${log.source} ${log.message}`.toLowerCase()
-        if (!text.includes(term)) return false
-      }
-      return true
+    return serverLogs.filter((log) => {
+      const matchesLevel =
+        levelFilter === 'all' || log.level === levelFilter
+
+      const matchesSearch =
+        !search.trim() ||
+        log.message.toLowerCase().includes(search.toLowerCase()) ||
+        log.source.toLowerCase().includes(search.toLowerCase())
+
+      return matchesLevel && matchesSearch
     })
-  }, [levelFilter, categoryFilter, search])
-
-  const levelOptions = [
-    { value: 'all', label: 'All levels' },
-    { value: 'info', label: 'Info' },
-    { value: 'warn', label: 'Warnings' },
-    { value: 'error', label: 'Errors' },
-  ]
-
-  const categoryOptions = [
-    { value: 'all', label: 'All categories' },
-    { value: 'anticheat', label: 'Anticheat' },
-    { value: 'script', label: 'Scripts' },
-    { value: 'report', label: 'Player reports' },
-    { value: 'db', label: 'Database' },
-    { value: 'staff', label: 'Staff actions' },
-    { value: 'queue', label: 'Queue' },
-    { value: 'restart', label: 'Restarts' },
-    { value: 'join', label: 'Joins' },
-  ]
-
-  const levelBadgeClasses = (level) => {
-    if (level === 'error') {
-      return 'bg-rose-500/20 text-rose-300'
-    }
-    if (level === 'warn') {
-      return 'bg-amber-500/20 text-amber-300'
-    }
-    return 'bg-sky-500/20 text-sky-200'
-  }
+  }, [levelFilter, search])
 
   return (
-    <div className="space-y-4">
-      {/* HEADER */}
-      <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-cyan-400">
-            Logs
+    <div className="gta-page min-h-[calc(100vh-3rem)]">
+      <div className="mx-auto max-w-6xl space-y-5 px-4 py-6 text-[11px] text-slate-300">
+        {/* HEADER */}
+        <header className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-sky-400">
+              Server logs
+            </p>
+            <h1 className="text-lg font-semibold text-slate-50 md:text-xl">
+              Script, server &amp; anticheat logs
+            </h1>
+            <p className="max-w-xl text-[11px] text-slate-400">
+              Watch script errors, server events and anticheat flags in one GTA
+              RP–friendly view. Filter down to what actually matters.
+            </p>
+          </div>
+        </header>
+
+        {/* SUMMARY + LEVEL CHART */}
+        <section className="gta-card grid gap-4 p-4 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1.1fr)]">
+          <div className="space-y-3">
+            <p className="text-[10px] uppercase tracking-wide text-slate-400">
+              Log summary
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-slate-900/80 px-3 py-2">
+                <p className="text-[10px] text-slate-400">
+                  Total log entries
+                </p>
+                <p className="text-lg font-semibold text-slate-50">
+                  {serverLogs.length}
+                </p>
+                <p className="text-[9px] text-slate-500">
+                  Sample data from this demo city.
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-900/80 px-3 py-2">
+                <p className="text-[10px] text-slate-400">
+                  Errors
+                </p>
+                <p className="text-lg font-semibold text-rose-400">
+                  {
+                    serverLogs.filter((l) => l.level === 'error')
+                      .length
+                  }
+                </p>
+                <p className="text-[9px] text-slate-500">
+                  Script &amp; resource failures.
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-900/80 px-3 py-2">
+                <p className="text-[10px] text-slate-400">
+                  Anti-cheat warnings
+                </p>
+                <p className="text-lg font-semibold text-amber-400">
+                  {
+                    serverLogs.filter((l) =>
+                      l.source.toLowerCase().includes('anticheat')
+                    ).length
+                  }
+                </p>
+                <p className="text-[9px] text-slate-500">
+                  Flags worth reviewing in spectate.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-[10px] uppercase tracking-wide text-sky-400">
+              Logs by level
+            </p>
+            <div className="h-32">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={levelCounts}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#1f2937"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fontSize: 10, fill: '#94a3b8' }}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fontSize: 10, fill: '#94a3b8' }}
+                    allowDecimals={false}
+                    width={26}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#020617',
+                      border: '1px solid #1f2937',
+                      fontSize: 11,
+                      color: '#e5e7eb',
+                    }}
+                    labelStyle={{ fontSize: 10 }}
+                  />
+                  <Bar dataKey="value" fill="#38bdf8" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-[9px] text-slate-500">
+              Spikes in errors after deploys usually mean a bad script build or
+              config change.
+            </p>
+          </div>
+        </section>
+
+        {/* FILTERS */}
+        <section className="gta-card flex flex-col gap-3 p-4">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                Search logs
+              </p>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Message, source, script name..."
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                Level
+              </p>
+              <select
+                value={levelFilter}
+                onChange={(e) => setLevelFilter(e.target.value)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
+              >
+                <option value="all">All levels</option>
+                <option value="info">Info</option>
+                <option value="warn">Warnings</option>
+                <option value="error">Errors</option>
+              </select>
+            </div>
+          </div>
+
+          <p className="text-[10px] text-slate-500">
+            Showing {filteredLogs.length} of {serverLogs.length} log entries.
           </p>
-          <h1 className="text-lg font-semibold text-slate-50">
-            Server logs
-          </h1>
-          <p className="text-xs text-slate-400">
-            Search and filter live logs across your GTA / FiveM city – joins,
-            restarts, anticheat flags, script errors and staff actions.
-          </p>
-        </div>
-        <div className="mt-2 md:mt-0">
-          <input
-            type="text"
-            placeholder="Search logs (player, resource, message)…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none md:w-80"
-          />
-        </div>
-      </header>
+        </section>
 
-      {/* FILTERS */}
-      <section className="flex flex-wrap gap-2 text-[11px]">
-        <select
-          value={levelFilter}
-          onChange={(e) => setLevelFilter(e.target.value)}
-          className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-slate-100 focus:border-cyan-400 focus:outline-none"
-        >
-          {levelOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-slate-100 focus:border-cyan-400 focus:outline-none"
-        >
-          {categoryOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </section>
-
-      {/* TABLE */}
-      <section className="mt-2 rounded-2xl border border-slate-800 bg-slate-950/80">
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-separate border-spacing-y-1 text-[11px] text-slate-300">
-            <thead>
-              <tr className="text-slate-400">
-                <th className="text-left font-normal px-3 py-2">Time</th>
-                <th className="text-left font-normal px-3 py-2">Level</th>
-                <th className="text-left font-normal px-3 py-2">Source</th>
-                <th className="text-left font-normal px-3 py-2">Message</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLogs.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-3 py-6 text-center text-xs text-slate-500"
+        {/* LOG LIST */}
+        <section className="gta-card max-h-[430px] space-y-2 overflow-y-auto p-3">
+          {filteredLogs.map((log) => (
+            <button
+              key={log.id}
+              onClick={() => setSelectedLog(log)}
+              className="flex w-full items-start gap-2 rounded-lg bg-slate-900/80 px-3 py-2 text-left text-[10px] transition hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-sky-500/30 md:border md:border-slate-800"
+            >
+              <span
+                className={
+                  'mt-[3px] h-1.5 w-1.5 flex-none rounded-full ' +
+                  (log.level === 'error'
+                    ? 'bg-rose-400'
+                    : log.level === 'warn'
+                    ? 'bg-amber-400'
+                    : 'bg-slate-400')
+                }
+              />
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <span className="text-[9px] text-slate-500">
+                    {new Date(log.timestamp).toLocaleString()}
+                  </span>
+                  <span className="text-[9px] text-slate-500">·</span>
+                  <span className="text-[9px] text-slate-300">
+                    {log.source}
+                  </span>
+                  <span className="text-[9px] text-slate-500">·</span>
+                  <span
+                    className={
+                      'rounded-full px-2 py-0.5 text-[9px] uppercase tracking-wide ' +
+                      (log.level === 'error'
+                        ? 'bg-rose-500/10 text-rose-300'
+                        : log.level === 'warn'
+                        ? 'bg-amber-500/10 text-amber-300'
+                        : 'bg-slate-700/60 text-slate-200')
+                    }
                   >
-                    No logs match your filters.
-                  </td>
-                </tr>
-              ) : (
-                filteredLogs.map((log) => (
-                  <tr key={log.id}>
-                    <td className="rounded-l-xl bg-slate-900/80 px-3 py-2">
-                      <div className="flex flex-col">
-                        <span className="text-slate-200">
-                          {log.time}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="bg-slate-900/80 px-3 py-2">
-                      <span
-                        className={
-                          'rounded-full px-2 py-0.5 text-[10px] ' +
-                          levelBadgeClasses(log.level)
-                        }
-                      >
-                        {log.level.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="bg-slate-900/80 px-3 py-2">
-                      {log.source}
-                    </td>
-                    <td className="rounded-r-xl bg-slate-900/80 px-3 py-2 text-slate-200">
-                      {log.message}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                    {log.level}
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] text-slate-100">
+                  {log.message}
+                </p>
+              </div>
+            </button>
+          ))}
+
+          {filteredLogs.length === 0 && (
+            <p className="py-6 text-center text-[11px] text-slate-500">
+              No logs match your filters or search.
+            </p>
+          )}
+        </section>
+      </div>
+
+      {/* LOG DETAIL POPUP */}
+      {selectedLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="gta-card relative w-full max-w-lg border-sky-500/60 bg-slate-950/95 p-4">
+            <button
+              className="absolute right-3 top-3 text-[11px] text-slate-400 hover:text-slate-100"
+              onClick={() => setSelectedLog(null)}
+            >
+              ✕
+            </button>
+
+            <p className="text-[10px] uppercase tracking-[0.2em] text-sky-400">
+              Log detail
+            </p>
+            <h2 className="mt-1 text-sm font-semibold text-slate-50">
+              {selectedLog.source}
+            </h2>
+
+            <p className="mt-1 text-[10px] text-slate-400">
+              {new Date(selectedLog.timestamp).toLocaleString()} ·{' '}
+              <span
+                className={
+                  'rounded-full px-2 py-0.5 text-[9px] uppercase tracking-wide ' +
+                  (selectedLog.level === 'error'
+                    ? 'bg-rose-500/10 text-rose-300'
+                    : selectedLog.level === 'warn'
+                    ? 'bg-amber-500/10 text-amber-300'
+                    : 'bg-slate-700/60 text-slate-200')
+                }
+              >
+                {selectedLog.level}
+              </span>
+            </p>
+
+            <p className="mt-3 text-[11px] text-slate-100">
+              {selectedLog.message}
+            </p>
+
+            <p className="mt-3 text-[9px] text-slate-500">
+              In a live city, clicking a log like this might jump you straight
+              into the relevant resource, player or incident in TorquePanel.
+            </p>
+          </div>
         </div>
-      </section>
+      )}
     </div>
   )
 }

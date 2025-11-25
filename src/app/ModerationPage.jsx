@@ -1,6 +1,4 @@
 // src/app/ModerationPage.jsx
-// Moderation control room for TorquePanel
-
 import { useMemo, useState } from 'react'
 import {
   ResponsiveContainer,
@@ -11,496 +9,141 @@ import {
   Tooltip,
   CartesianGrid,
 } from 'recharts'
-
-const demoTickets = [
-  {
-    id: 4821,
-    createdAt: '4 min ago',
-    player: 'TTV_Nitro',
-    reporter: 'NovaRP',
-    location: 'Legion Square',
-    summary: 'VDM into sidewalk crowd during event.',
-    severity: 'High',
-    status: 'Open',
-    queue: 'City',
-    ageMinutes: 4,
-    category: 'VDM',
-    staff: null,
-    notes: [
-      'Auto-flag from anticheat for unusual vehicle speed.',
-      'Multiple reports within 2 minutes near Legion.',
-    ],
-  },
-  {
-    id: 4817,
-    createdAt: '18 min ago',
-    player: 'NovaRP',
-    reporter: 'Karma',
-    location: 'MRPD holding',
-    summary: 'OOC in cells, arguing about rules on voice.',
-    severity: 'Medium',
-    status: 'Claimed',
-    queue: 'PD',
-    ageMinutes: 18,
-    category: 'OOC',
-    staff: 'Karma',
-    notes: ['Player previously warned for similar behavior last week.'],
-  },
-  {
-    id: 4811,
-    createdAt: '29 min ago',
-    player: 'DriftKing',
-    reporter: 'System',
-    location: 'Vinewood',
-    summary: 'Street race reported by multiple 911 calls.',
-    severity: 'Low',
-    status: 'Investigating',
-    queue: 'Traffic',
-    ageMinutes: 29,
-    category: 'Reckless driving',
-    staff: 'Ash',
-    notes: ['Traffic unit dispatched, bodycam footage pending review.'],
-  },
-  {
-    id: 4803,
-    createdAt: '1 h 12 min ago',
-    player: 'RandomAndy',
-    reporter: 'Player report',
-    location: 'Hospital parking',
-    summary: 'Combat logging after being downed.',
-    severity: 'Medium',
-    status: 'Resolved',
-    queue: 'City',
-    ageMinutes: 72,
-    category: 'Combat logging',
-    staff: 'Pixel',
-    notes: ['Explained rules, 24h temp ban applied.', 'Logged to MDT.'],
-  },
-]
+import { moderationEvents as baseModerationEvents } from '../data/serverData'
 
 function ModerationPage() {
-  const [statusFilter, setStatusFilter] = useState('active') // active = open + claimed + investigating
-  const [severityFilter, setSeverityFilter] = useState('all')
-  const [queueFilter, setQueueFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('open') // open | resolved | all
+  const [typeFilter, setTypeFilter] = useState('all') // all | warning | kick | ban | note
   const [search, setSearch] = useState('')
-  const [selectedId, setSelectedId] = useState(demoTickets[0]?.id ?? null)
+  const [selectedEvent, setSelectedEvent] = useState(null)
 
-  const filteredTickets = useMemo(() => {
-    return demoTickets.filter((t) => {
-      if (statusFilter === 'active') {
-        if (['Resolved', 'Closed'].includes(t.status)) return false
-      } else if (statusFilter !== 'all' && t.status !== statusFilter) {
-        return false
-      }
-
-      if (
-        severityFilter !== 'all' &&
-        (t.severity || '').toLowerCase() !== severityFilter
-      ) {
-        return false
-      }
-
-      if (
-        queueFilter !== 'all' &&
-        (t.queue || '').toLowerCase() !== queueFilter
-      ) {
-        return false
-      }
-
-      if (search.trim()) {
-        const term = search.toLowerCase()
-        const text = `${t.id} ${t.player} ${t.reporter} ${t.summary} ${t.location} ${
-          t.category || ''
-        }`.toLowerCase()
-        if (!text.includes(term)) return false
-      }
-
-      return true
-    })
-  }, [statusFilter, severityFilter, queueFilter, search])
-
-  const selectedTicket =
-    filteredTickets.find((t) => t.id === selectedId) ||
-    filteredTickets[0] ||
-    demoTickets[0] ||
-    null
-
-  // Small chart: tickets by severity
-  const severityCounts = demoTickets.reduce(
-    (acc, t) => {
-      const s = (t.severity || 'Other').toLowerCase()
-      if (s === 'high') acc.high += 1
-      else if (s === 'medium') acc.medium += 1
-      else if (s === 'low') acc.low += 1
-      else acc.other += 1
-      return acc
-    },
-    { high: 0, medium: 0, low: 0, other: 0 }
+  // Local copy so we can “resolve” in UI without touching the data file
+  const [localEvents, setLocalEvents] = useState(
+    baseModerationEvents.map((e) => ({ ...e }))
   )
 
-  const severityData = [
-    { label: 'High', count: severityCounts.high },
-    { label: 'Med', count: severityCounts.medium },
-    { label: 'Low', count: severityCounts.low },
-    { label: 'Other', count: severityCounts.other },
-  ]
+  const typeCounts = useMemo(() => {
+    const counts = {
+      warning: 0,
+      kick: 0,
+      ban: 0,
+      note: 0,
+    }
+    localEvents.forEach((e) => {
+      if (counts[e.type] != null) counts[e.type]++
+    })
+    return [
+      { type: 'warning', label: 'Warnings', value: counts.warning },
+      { type: 'kick', label: 'Kicks', value: counts.kick },
+      { type: 'ban', label: 'Bans', value: counts.ban },
+      { type: 'note', label: 'Notes', value: counts.note },
+    ]
+  }, [localEvents])
 
-  const statusOptions = [
-    { value: 'active', label: 'Active queue' },
-    { value: 'all', label: 'All statuses' },
-    { value: 'Open', label: 'Open only' },
-    { value: 'Claimed', label: 'Claimed' },
-    { value: 'Investigating', label: 'Investigating' },
-    { value: 'Resolved', label: 'Resolved' },
-  ]
+  const filteredEvents = useMemo(() => {
+    return localEvents.filter((m) => {
+      const matchesStatus =
+        statusFilter === 'all' || m.status === statusFilter
 
-  const severityOptions = [
-    { value: 'all', label: 'All severities' },
-    { value: 'low', label: 'Low' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'high', label: 'High' },
-  ]
+      const matchesType =
+        typeFilter === 'all' || m.type === typeFilter
 
-  const queueOptions = [
-    { value: 'all', label: 'All queues' },
-    { value: 'city', label: 'City' },
-    { value: 'pd', label: 'PD' },
-    { value: 'traffic', label: 'Traffic' },
-  ]
+      const matchesSearch =
+        !search.trim() ||
+        m.playerName.toLowerCase().includes(search.toLowerCase()) ||
+        m.staffName.toLowerCase().includes(search.toLowerCase()) ||
+        m.reason.toLowerCase().includes(search.toLowerCase())
 
-  const severityBadgeClasses = (severity) => {
-    const s = (severity || '').toLowerCase()
-    if (s === 'high') return 'bg-amber-500/20 text-amber-300'
-    if (s === 'medium') return 'bg-sky-500/20 text-sky-200'
-    if (s === 'low') return 'bg-emerald-500/20 text-emerald-200'
-    return 'bg-slate-700/40 text-slate-200'
-  }
+      return matchesStatus && matchesType && matchesSearch
+    })
+  }, [statusFilter, typeFilter, search, localEvents])
 
-  const statusBadgeClasses = (status) => {
-    if (status === 'Open') return 'bg-rose-500/20 text-rose-200'
-    if (status === 'Claimed') return 'bg-cyan-500/20 text-cyan-200'
-    if (status === 'Investigating') return 'bg-indigo-500/20 text-indigo-200'
-    if (status === 'Resolved') return 'bg-emerald-500/20 text-emerald-200'
-    return 'bg-slate-700/40 text-slate-200'
+  function markResolved(id) {
+    setLocalEvents((prev) =>
+      prev.map((e) =>
+        e.id === id ? { ...e, status: 'resolved' } : e
+      )
+    )
+    setSelectedEvent((prev) =>
+      prev && prev.id === id ? { ...prev, status: 'resolved' } : prev
+    )
   }
 
   return (
-    <div className="space-y-4">
-      {/* HEADER */}
-      <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-cyan-400">
-            Moderation
-          </p>
-          <h1 className="text-lg font-semibold text-slate-50">
-            Live incident queue
-          </h1>
-          <p className="text-xs text-slate-400">
-            See every report, staff claim and resolution in one place. Built for
-            GTA / FiveM RP cities so your staff can move faster than Discord
-            screenshots.
-          </p>
-        </div>
-        <div className="mt-2 md:mt-0">
-          <input
-            type="text"
-            placeholder="Search by player, reporter or reason…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none md:w-72"
-          />
-        </div>
-      </header>
-
-      {/* FILTERS */}
-      <section className="flex flex-wrap gap-2 text-[11px]">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-slate-100 focus:border-cyan-400 focus:outline-none"
-        >
-          {statusOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value)}
-          className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-slate-100 focus:border-cyan-400 focus:outline-none"
-        >
-          {severityOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={queueFilter}
-          onChange={(e) => setQueueFilter(e.target.value)}
-          className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-slate-100 focus:border-cyan-400 focus:outline-none"
-        >
-          {queueOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </section>
-
-      {/* MAIN GRID: QUEUE + DETAILS */}
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)]">
-        {/* LEFT: QUEUE */}
-        <section className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-300">
-          <div className="mb-2 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-semibold text-slate-50">
-                Open moderation items
-              </h2>
-              <p className="text-[11px] text-slate-400">
-                Click a ticket to view details, notes and staff actions.
-              </p>
-            </div>
-            <span className="text-[11px] text-slate-500">
-              {filteredTickets.length} tickets
-            </span>
+    <div className="gta-page min-h-[calc(100vh-3rem)]">
+      <div className="mx-auto max-w-6xl space-y-5 px-4 py-6 text-[11px] text-slate-300">
+        {/* HEADER */}
+        <header className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-amber-400">
+              Moderation
+            </p>
+            <h1 className="text-lg font-semibold text-slate-50 md:text-xl">
+              Moderation queue · Warnings, kicks &amp; bans
+            </h1>
+            <p className="max-w-xl text-[11px] text-slate-400">
+              See recent staff actions and open tickets against players. Perfect
+              for head admins and staff leads doing reviews.
+            </p>
           </div>
+        </header>
 
-          <div className="mt-2 overflow-x-auto">
-            <table className="min-w-full border-separate border-spacing-y-1 text-[11px]">
-              <thead className="text-slate-400">
-                <tr>
-                  <th className="text-left font-normal px-2 py-1">ID</th>
-                  <th className="text-left font-normal px-2 py-1">Player</th>
-                  <th className="text-left font-normal px-2 py-1">
-                    Severity
-                  </th>
-                  <th className="text-left font-normal px-2 py-1">Status</th>
-                  <th className="text-left font-normal px-2 py-1">
-                    Reporter
-                  </th>
-                  <th className="text-left font-normal px-2 py-1">
-                    Age
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTickets.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-3 py-6 text-center text-xs text-slate-500"
-                    >
-                      No tickets match your filters.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredTickets.map((t) => (
-                    <tr
-                      key={t.id}
-                      onClick={() => setSelectedId(t.id)}
-                      className={
-                        'cursor-pointer ' +
-                        (t.id === selectedTicket?.id
-                          ? 'brightness-110'
-                          : '')
-                      }
-                    >
-                      <td className="rounded-l-xl bg-slate-900/80 px-2 py-2 text-slate-400">
-                        #{t.id}
-                      </td>
-                      <td className="bg-slate-900/80 px-2 py-2">
-                        <div className="flex flex-col">
-                          <span className="text-slate-50">{t.player}</span>
-                          <span className="text-[10px] text-slate-500">
-                            {t.location}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="bg-slate-900/80 px-2 py-2">
-                        <span
-                          className={
-                            'rounded-full px-2 py-0.5 text-[10px] ' +
-                            severityBadgeClasses(t.severity)
-                          }
-                        >
-                          {t.severity}
-                        </span>
-                      </td>
-                      <td className="bg-slate-900/80 px-2 py-2">
-                        <span
-                          className={
-                            'rounded-full px-2 py-0.5 text-[10px] ' +
-                            statusBadgeClasses(t.status)
-                          }
-                        >
-                          {t.status}
-                        </span>
-                      </td>
-                      <td className="bg-slate-900/80 px-2 py-2">
-                        {t.reporter}
-                      </td>
-                      <td className="rounded-r-xl bg-slate-900/80 px-2 py-2 text-slate-400">
-                        {t.createdAt}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* RIGHT: DETAILS + CHART */}
-        <section className="space-y-3">
-          {/* Ticket details */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-300">
-            {selectedTicket ? (
-              <>
-                <div className="mb-2 flex items-start justify-between gap-2">
-                  <div>
-                    <h2 className="text-sm font-semibold text-slate-50">
-                      Ticket #{selectedTicket.id}{' '}
-                      <span className="text-xs text-slate-400">
-                        · {selectedTicket.category}
-                      </span>
-                    </h2>
-                    <p className="text-[11px] text-slate-400">
-                      Reported {selectedTicket.createdAt} by{' '}
-                      <span className="text-slate-200">
-                        {selectedTicket.reporter}
-                      </span>
-                      .
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1 text-[11px]">
-                    <span
-                      className={
-                        'rounded-full px-2 py-0.5 ' +
-                        severityBadgeClasses(selectedTicket.severity)
-                      }
-                    >
-                      {selectedTicket.severity} priority
-                    </span>
-                    <span
-                      className={
-                        'rounded-full px-2 py-0.5 ' +
-                        statusBadgeClasses(selectedTicket.status)
-                      }
-                    >
-                      {selectedTicket.status}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-2 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2">
-                  <p className="text-[11px] text-slate-400">Summary</p>
-                  <p className="text-xs text-slate-50">
-                    {selectedTicket.summary}
-                  </p>
-                  <p className="mt-1 text-[11px] text-slate-500">
-                    Location:{' '}
-                    <span className="text-slate-200">
-                      {selectedTicket.location}
-                    </span>{' '}
-                    · Queue:{' '}
-                    <span className="text-slate-200">
-                      {selectedTicket.queue}
-                    </span>
-                  </p>
-                </div>
-
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2">
-                    <p className="text-[11px] text-slate-400">Reported player</p>
-                    <p className="text-xs text-slate-50">
-                      {selectedTicket.player}
-                    </p>
-                    <p className="mt-1 text-[11px] text-slate-500">
-                      Staff assigned:{' '}
-                      <span className="text-slate-200">
-                        {selectedTicket.staff || 'Unassigned'}
-                      </span>
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2">
-                    <p className="text-[11px] text-slate-400">Time in queue</p>
-                    <p className="text-xs text-slate-50">
-                      {selectedTicket.ageMinutes} minutes
-                    </p>
-                    <p className="mt-1 text-[11px] text-slate-500">
-                      In a live city this would enforce your staff SLA for
-                      high-priority tickets.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Notes */}
-                <div className="mt-3 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2">
-                  <p className="text-[11px] text-slate-400">Notes</p>
-                  {selectedTicket.notes && selectedTicket.notes.length > 0 ? (
-                    <ul className="mt-1 list-disc space-y-1 pl-4 text-[11px] text-slate-300">
-                      {selectedTicket.notes.map((n, idx) => (
-                        <li key={idx}>{n}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="mt-1 text-[11px] text-slate-500">
-                      No staff notes yet. In production you could sync notes
-                      with your MDT or Discord bot.
-                    </p>
-                  )}
-                </div>
-
-                {/* Quick actions – demo only */}
-                <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
-                  <button className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-slate-200 hover:border-cyan-400 hover:text-cyan-300">
-                    Claim ticket (demo)
-                  </button>
-                  <button className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-slate-200 hover:border-emerald-400 hover:text-emerald-300">
-                    Mark resolved (demo)
-                  </button>
-                  <button className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-slate-200 hover:border-sky-400 hover:text-sky-300">
-                    Ping staff Discord (demo)
-                  </button>
-                </div>
-                <p className="mt-1 text-[10px] text-slate-500">
-                  Buttons are demo-only here. In a live TorquePanel setup these
-                  would log to your audit trail and optionally hit a Discord bot
-                  or in-game command.
+        {/* SUMMARY + CHART */}
+        <section className="gta-card grid gap-4 p-4 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1.1fr)]">
+          <div className="space-y-3">
+            <p className="text-[10px] uppercase tracking-wide text-slate-400">
+              Queue summary
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-slate-900/80 px-3 py-2">
+                <p className="text-[10px] text-slate-400">
+                  Open tickets
                 </p>
-              </>
-            ) : (
-              <p className="text-[11px] text-slate-500">
-                Select a ticket on the left to see full details.
-              </p>
-            )}
-          </div>
-
-          {/* Severity mix chart */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-300">
-            <div className="mb-2 flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-slate-50">
-                  Queue severity mix
-                </h2>
-                <p className="text-[11px] text-slate-400">
-                  Small snapshot of how heavy the active queue feels right now.
+                <p className="text-lg font-semibold text-amber-300">
+                  {
+                    localEvents.filter((e) => e.status === 'open')
+                      .length
+                  }
+                </p>
+                <p className="text-[9px] text-slate-500">
+                  Keep this number low during peak hours.
                 </p>
               </div>
-              <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] text-slate-500">
-                Demo analytics
-              </span>
+              <div className="rounded-xl bg-slate-900/80 px-3 py-2">
+                <p className="text-[10px] text-slate-400">
+                  Total actions
+                </p>
+                <p className="text-lg font-semibold text-slate-50">
+                  {localEvents.length}
+                </p>
+                <p className="text-[9px] text-slate-500">
+                  Warnings, kicks, bans &amp; notes.
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-900/80 px-3 py-2">
+                <p className="text-[10px] text-slate-400">
+                  Most severe type
+                </p>
+                <p className="text-lg font-semibold text-rose-300">
+                  Bans
+                </p>
+                <p className="text-[9px] text-slate-500">
+                  Use bans sparingly for extreme behavior.
+                </p>
+              </div>
             </div>
-            <div className="mt-2 h-32">
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-[10px] uppercase tracking-wide text-amber-400">
+              Actions by type
+            </p>
+            <div className="h-32">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={severityData}>
+                <BarChart data={typeCounts}>
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="#0f172a"
+                    stroke="#1f2937"
                     vertical={false}
                   />
                   <XAxis
@@ -510,11 +153,11 @@ function ModerationPage() {
                     tick={{ fontSize: 10, fill: '#94a3b8' }}
                   />
                   <YAxis
-                    allowDecimals={false}
                     tickLine={false}
                     axisLine={false}
                     tick={{ fontSize: 10, fill: '#94a3b8' }}
-                    width={20}
+                    allowDecimals={false}
+                    width={26}
                   />
                   <Tooltip
                     contentStyle={{
@@ -525,18 +168,232 @@ function ModerationPage() {
                     }}
                     labelStyle={{ fontSize: 10 }}
                   />
-                  <Bar
-                    dataKey="count"
-                    radius={[6, 6, 0, 0]}
-                    fill="#38bdf8"
-                    opacity={0.9}
-                  />
+                  <Bar dataKey="value" fill="#fbbf24" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            <p className="text-[9px] text-slate-500">
+              Too many kicks vs. warnings may mean staff are skipping education
+              and going straight to kicks.
+            </p>
+          </div>
+        </section>
+
+        {/* FILTERS */}
+        <section className="gta-card flex flex-col gap-3 p-4">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                Search
+              </p>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Player, staff, reason..."
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                Status
+              </p>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
+              >
+                <option value="open">Open only</option>
+                <option value="resolved">Resolved only</option>
+                <option value="all">All</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                Type
+              </p>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
+              >
+                <option value="all">All types</option>
+                <option value="warning">Warnings</option>
+                <option value="kick">Kicks</option>
+                <option value="ban">Bans</option>
+                <option value="note">Notes</option>
+              </select>
+            </div>
+          </div>
+
+          <p className="text-[10px] text-slate-500">
+            Showing {filteredEvents.length} of {localEvents.length} moderation
+            events.
+          </p>
+        </section>
+
+        {/* MODERATION LIST */}
+        <section className="gta-card p-4">
+          <div className="mb-2 grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.1fr)] gap-3 border-b border-slate-800 pb-2 text-[10px] text-slate-400 max-md:hidden">
+            <span>Player &amp; action</span>
+            <span>Staff &amp; status</span>
+            <span>Reason &amp; evidence</span>
+          </div>
+
+          <div className="space-y-2">
+            {filteredEvents.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setSelectedEvent(m)}
+                className="grid w-full grid-cols-1 gap-2 rounded-xl bg-slate-900/80 p-3 text-left text-[11px] transition hover:-translate-y-0.5 hover:border-amber-400 hover:shadow-amber-500/30 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.1fr)] md:items-start md:border md:border-slate-800"
+              >
+                {/* PLAYER & ACTION */}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-slate-50">
+                      {m.playerName}
+                    </span>
+                    <span
+                      className={
+                        'rounded-full px-2 py-0.5 text-[9px] uppercase tracking-wide ' +
+                        (m.type === 'ban'
+                          ? 'bg-rose-500/10 text-rose-300'
+                          : m.type === 'kick'
+                          ? 'bg-amber-500/10 text-amber-300'
+                          : m.type === 'warning'
+                          ? 'bg-emerald-500/10 text-emerald-300'
+                          : 'bg-sky-500/10 text-sky-300')
+                      }
+                    >
+                      {m.type}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[9px] text-slate-500">
+                    {new Date(m.createdAt).toLocaleString()}
+                  </p>
+                </div>
+
+                {/* STAFF & STATUS */}
+                <div>
+                  <p className="text-[10px] text-slate-400">Staff</p>
+                  <p className="text-[11px] text-slate-200">
+                    {m.staffName}
+                  </p>
+                  <p className="mt-1 text-[10px] text-slate-400">
+                    Status:{' '}
+                    <span
+                      className={
+                        m.status === 'open'
+                          ? 'text-amber-300'
+                          : 'text-emerald-300'
+                      }
+                    >
+                      {m.status}
+                    </span>
+                  </p>
+                </div>
+
+                {/* REASON & EVIDENCE */}
+                <div>
+                  <p className="text-[10px] text-slate-400">Reason</p>
+                  <p className="text-[11px] text-slate-100">
+                    {m.reason}
+                  </p>
+                  {m.evidence && m.evidence.length > 0 && (
+                    <p className="mt-1 text-[9px] text-slate-500">
+                      Evidence:{' '}
+                      <span className="text-sky-300">
+                        {m.evidence.join(', ')}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </button>
+            ))}
+
+            {filteredEvents.length === 0 && (
+              <p className="py-6 text-center text-[11px] text-slate-500">
+                No moderation events match your filters.
+              </p>
+            )}
           </div>
         </section>
       </div>
+
+      {/* POPUP DETAIL */}
+      {selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="gta-card relative w-full max-w-lg border-amber-500/60 bg-slate-950/95 p-4">
+            <button
+              className="absolute right-3 top-3 text-[11px] text-slate-400 hover:text-slate-100"
+              onClick={() => setSelectedEvent(null)}
+            >
+              ✕
+            </button>
+
+            <p className="text-[10px] uppercase tracking-[0.2em] text-amber-400">
+              Moderation detail
+            </p>
+            <h2 className="mt-1 text-sm font-semibold text-slate-50">
+              {selectedEvent.type.toUpperCase()} ·{' '}
+              {selectedEvent.playerName}
+            </h2>
+            <p className="mt-1 text-[11px] text-slate-400">
+              Staff:{' '}
+              <span className="text-slate-200">
+                {selectedEvent.staffName}
+              </span>{' '}
+              ·{' '}
+              <span
+                className={
+                  selectedEvent.status === 'open'
+                    ? 'text-amber-300'
+                    : 'text-emerald-300'
+                }
+              >
+                {selectedEvent.status}
+              </span>
+            </p>
+
+            <p className="mt-3 text-[10px] text-slate-400">Reason</p>
+            <p className="text-[11px] text-slate-100">
+              {selectedEvent.reason}
+            </p>
+
+            {selectedEvent.evidence &&
+              selectedEvent.evidence.length > 0 && (
+                <>
+                  <p className="mt-3 text-[10px] text-slate-400">
+                    Evidence
+                  </p>
+                  <ul className="mt-1 list-disc space-y-1 pl-4 text-[10px] text-sky-300">
+                    {selectedEvent.evidence.map((e, idx) => (
+                      <li key={idx}>{e}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+            <div className="mt-4 flex items-center justify-between gap-3 text-[10px]">
+              <p className="max-w-xs text-slate-500">
+                Mark this as resolved once the situation is fully handled and
+                documented.
+              </p>
+              {selectedEvent.status === 'open' ? (
+                <button
+                  onClick={() => markResolved(selectedEvent.id)}
+                  className="rounded-full bg-emerald-500/80 px-4 py-1.5 text-[11px] font-medium text-slate-950 hover:bg-emerald-400"
+                >
+                  Mark as resolved
+                </button>
+              ) : (
+                <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] text-emerald-300">
+                  Already resolved
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
