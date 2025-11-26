@@ -3,52 +3,78 @@ import { createContext, useContext, useEffect, useState } from 'react'
 
 const AuthContext = createContext(null)
 
+const API_BASE = 'http://localhost:3001'
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [token, setToken] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   // On first load, try to restore from localStorage
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('torquepanel_user')
+      const stored = localStorage.getItem('torquepanel_auth')
       if (stored) {
-        setUser(JSON.parse(stored))
+        const parsed = JSON.parse(stored)
+        setUser(parsed.user || null)
+        setToken(parsed.token || null)
       }
     } catch (err) {
-      console.error('Failed to read user from localStorage', err)
+      console.error('Failed to load auth from localStorage', err)
+    } finally {
+      setLoading(false)
     }
   }, [])
 
-  // Save any changes to user into localStorage
-  useEffect(() => {
-    try {
-      if (user) {
-        localStorage.setItem('torquepanel_user', JSON.stringify(user))
-      } else {
-        localStorage.removeItem('torquepanel_user')
-      }
-    } catch (err) {
-      console.error('Failed to write user to localStorage', err)
+  function saveAuth(nextUser, nextToken) {
+    setUser(nextUser)
+    setToken(nextToken)
+    if (nextUser && nextToken) {
+      localStorage.setItem(
+        'torquepanel_auth',
+        JSON.stringify({ user: nextUser, token: nextToken })
+      )
+    } else {
+      localStorage.removeItem('torquepanel_auth')
     }
-  }, [user])
+  }
 
-  function login({ name, email, role }) {
-    const newUser = {
-      id: email || name || 'local-user',
-      name: name || 'Unnamed',
-      email: email || '',
-      role: role || 'owner', // owner | staff | dev
-      createdAt: new Date().toISOString(),
+  async function signup({ name, email, password }) {
+    const res = await fetch(`${API_BASE}/api/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.error || 'Signup failed')
     }
-    setUser(newUser)
+    saveAuth(data.user, data.token)
+  }
+
+  async function login({ email, password }) {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.error || 'Login failed')
+    }
+    saveAuth(data.user, data.token)
   }
 
   function logout() {
-    setUser(null)
+    saveAuth(null, null)
   }
 
   const value = {
     user,
-    isLoggedIn: !!user,
+    token,
+    isLoggedIn: !!user && !!token,
+    loading,
+    signup,
     login,
     logout,
   }

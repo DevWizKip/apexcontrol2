@@ -1,247 +1,279 @@
 // src/pages/AccountPage.jsx
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { servers } from '../data/serverData'
+
+const API_BASE = 'http://localhost:3001'
 
 function AccountPage() {
-  const { user, isLoggedIn, login, logout } = useAuth()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [role, setRole] = useState('owner') // owner | staff | dev
+  const { user, isLoggedIn, token, logout } = useAuth()
+  const navigate = useNavigate()
+  const [servers, setServers] = useState([])
+  const [loadingServers, setLoadingServers] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState(null)
 
-  function handleCreateAccount(e) {
-    e.preventDefault()
-    if (!name.trim()) return
-    login({ name, email, role })
+  useEffect(() => {
+    if (!isLoggedIn) return
+
+    async function fetchServers() {
+      try {
+        setLoadingServers(true)
+        const res = await fetch(`${API_BASE}/api/servers`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to load servers')
+        }
+        setServers(data)
+      } catch (err) {
+        console.error('Error loading servers', err)
+        setError(err.message || 'Could not load servers')
+      } finally {
+        setLoadingServers(false)
+      }
+    }
+
+    fetchServers()
+  }, [isLoggedIn, token])
+
+  async function handleCreateServer() {
+    try {
+      setCreating(true)
+      setError(null)
+      const res = await fetch(`${API_BASE}/api/servers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ planId: 'starter', billing: 'monthly' }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create server')
+      }
+      setServers((prev) => [...prev, data])
+    } catch (err) {
+      console.error('Create server failed', err)
+      setError(err.message || 'Could not create server')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const totalServers = servers.length
+  const monthlyServers = servers.filter((s) => s.billing === 'monthly').length
+  const yearlyServers = servers.filter((s) => s.billing === 'yearly').length
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gta bg-cover bg-fixed bg-center bg-no-repeat">
+        <main className="flex min-h-screen items-center justify-center bg-slate-950/80 px-4 py-10 text-slate-50 backdrop-blur">
+          <div className="gta-card w-full max-w-md p-6 text-center">
+            <h1 className="text-xl font-semibold tracking-tight text-slate-50">
+              Account &amp; servers
+            </h1>
+            <p className="mt-2 text-[11px] text-slate-400">
+              You need to be logged in to view your servers.
+            </p>
+            <div className="mt-4 flex flex-col gap-2 text-[11px]">
+              <button
+                onClick={() => navigate('/login')}
+                className="w-full rounded-full bg-gradient-to-r from-cyan-500 to-emerald-400 px-4 py-1.5 font-medium text-slate-950 hover:brightness-110"
+              >
+                Log in
+              </button>
+              <button
+                onClick={() => navigate('/signup')}
+                className="w-full rounded-full border border-slate-700 bg-slate-950 px-4 py-1.5 text-slate-100 hover:border-cyan-400 hover:text-cyan-300"
+              >
+                Create an account
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="w-full rounded-full border border-slate-700 bg-slate-950 px-4 py-1.5 text-slate-100 hover:border-cyan-400 hover:text-cyan-300"
+              >
+                Back to homepage
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (
-    <div className="gta-page">
-      <main className="mx-auto max-w-5xl space-y-8 px-4 py-10 text-[11px] text-slate-300">
-        <button
-          onClick={() => (window.location.href = '/')}
-          className="mb-4 inline-flex items-center rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-[11px] text-slate-200 hover:border-cyan-400 hover:text-cyan-300"
-        >
-          ← Back to home
-        </button>
-
-        {/* HEADER */}
-        <header className="space-y-2">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-cyan-400">
-            Account
-          </p>
-          <h1 className="text-2xl font-semibold text-slate-50">
-            Manage your TorquePanel account for your GTA city.
-          </h1>
-          <p className="text-xs text-slate-400">
-            This demo keeps your account locally in your browser using
-            localStorage. In a real deployment, this would be backed by a
-            database and real authentication.
-          </p>
-        </header>
-
-        {/* NOT LOGGED IN STATE */}
-        {!isLoggedIn && (
-          <section className="gta-card grid gap-6 p-4 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-            <form
-              onSubmit={handleCreateAccount}
-              className="space-y-3 text-[11px]"
-            >
-              <p className="text-[10px] uppercase tracking-wide text-slate-400">
-                Create local account
+    <div className="min-h-screen bg-gta bg-cover bg-fixed bg-center bg-no-repeat">
+      <main className="min-h-screen bg-slate-950/80 px-4 pb-12 pt-20 text-slate-50 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl flex-col gap-6">
+          {/* HEADER */}
+          <header className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-cyan-300">
+                Account
               </p>
-              <p className="text-slate-400">
-                This does not talk to any real server – it just sets a local
-                account so you can see how TorquePanel would behave with owners,
-                staff and devs.
-              </p>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-50">
+                {user?.name || 'Your TorquePanel account'}
+              </h1>
+              <p className="text-[11px] text-slate-400">{user?.email}</p>
+            </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-[10px] uppercase tracking-wide text-slate-400">
-                  Display name
-                </label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
-                  placeholder="NovaRP, CityOwner, etc."
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-[10px] uppercase tracking-wide text-slate-400">
-                  Email (optional)
-                </label>
-                <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  type="email"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
-                  placeholder="you@cityrp.gg"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-[10px] uppercase tracking-wide text-slate-400">
-                  Role
-                </label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] text-slate-100 outline-none focus:border-cyan-400"
-                >
-                  <option value="owner">Server owner</option>
-                  <option value="staff">Staff / head admin</option>
-                  <option value="dev">Dev / scripter</option>
-                </select>
-              </div>
-
+            <div className="flex gap-2">
               <button
-                type="submit"
-                className="mt-2 rounded-full bg-gradient-to-r from-cyan-500 to-emerald-400 px-4 py-1.5 text-[11px] font-medium text-slate-950 shadow-lg shadow-cyan-500/30 hover:brightness-110"
+                onClick={() => navigate('/')}
+                className="h-8 rounded-full border border-slate-700 bg-slate-950 px-3 text-[11px] text-slate-300 hover:border-cyan-400 hover:text-cyan-300"
               >
-                Create local account
+                Back to homepage
               </button>
-            </form>
+              <button
+                onClick={logout}
+                className="h-8 rounded-full border border-slate-700 bg-slate-950 px-3 text-[11px] text-slate-300 hover:border-rose-400 hover:text-rose-300"
+              >
+                Log out
+              </button>
+            </div>
+          </header>
 
-            <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-3">
-              <p className="text-[10px] uppercase tracking-wide text-slate-400">
-                What this demo account does
+          {/* STATS ROW */}
+          <section className="grid gap-3 md:grid-cols-3 text-[11px]">
+            <div className="gta-card flex flex-col justify-between p-3">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                Total servers
               </p>
-              <ul className="space-y-1.5">
-                <li className="flex items-start gap-2">
-                  <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-cyan-400" />
-                  <span>
-                    Stores your name, email and role in your browser only,
-                    using localStorage.
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                  <span>
-                    Lets the panel show different views for owners, staff and
-                    devs.
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-sky-400" />
-                  <span>
-                    Easy to swap later for real authentication (Discord, email,
-                    etc.).
-                  </span>
-                </li>
-              </ul>
+              <p className="mt-1 text-xl font-semibold text-slate-50">
+                {totalServers}
+              </p>
+              <p className="mt-1 text-[10px] text-slate-400">
+                All servers owned by this account.
+              </p>
+            </div>
+            <div className="gta-card flex flex-col justify-between p-3">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                Monthly plans
+              </p>
+              <p className="mt-1 text-xl font-semibold text-cyan-300">
+                {monthlyServers}
+              </p>
+              <p className="mt-1 text-[10px] text-slate-400">
+                Servers billed on a monthly basis.
+              </p>
+            </div>
+            <div className="gta-card flex flex-col justify-between p-3">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                Yearly plans
+              </p>
+              <p className="mt-1 text-xl font-semibold text-emerald-300">
+                {yearlyServers}
+              </p>
+              <p className="mt-1 text-[10px] text-slate-400">
+                Servers that use the yearly discount.
+              </p>
             </div>
           </section>
-        )}
 
-        {/* LOGGED IN STATE */}
-        {isLoggedIn && (
-          <section className="space-y-6">
-            <div className="gta-card grid gap-4 p-4 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-              <div className="space-y-2">
-                <p className="text-[10px] uppercase tracking-wide text-emerald-400">
-                  Signed in
+          {/* MAIN CONTENT */}
+          <section className="grid gap-4 md:grid-cols-3">
+            {/* LEFT: servers list */}
+            <div className="gta-card p-4 text-[11px] text-slate-300 md:col-span-2">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                Your GTA / FiveM servers
+              </p>
+
+              {error && <p className="mt-2 text-rose-400">{error}</p>}
+
+              {loadingServers ? (
+                <p className="mt-3 text-slate-400">Loading servers...</p>
+              ) : servers.length === 0 ? (
+                <p className="mt-3 text-slate-400">
+                  No servers yet. After you complete a plan purchase, your
+                  server will appear here. For now you can create a demo entry
+                  with the button below.
                 </p>
-                <h2 className="text-sm font-semibold text-slate-50">
-                  Welcome back, {user.name}.
-                </h2>
-                <p className="text-[11px] text-slate-400">
-                  You are currently acting as{' '}
-                  <span className="font-semibold text-cyan-300">
-                    {user.role === 'owner'
-                      ? 'Server owner'
-                      : user.role === 'staff'
-                      ? 'Staff / head admin'
-                      : 'Dev / scripter'}
-                  </span>{' '}
-                  for this TorquePanel demo.
-                </p>
-
-                <div className="mt-2 grid gap-3 text-[11px] text-slate-300 sm:grid-cols-3">
-                  <div className="rounded-xl bg-slate-900/80 px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-wide text-slate-400">
-                      Role
-                    </p>
-                    <p className="text-sm font-semibold text-slate-50">
-                      {user.role === 'owner'
-                        ? 'Server owner'
-                        : user.role === 'staff'
-                        ? 'Staff / head admin'
-                        : 'Dev / scripter'}
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-slate-900/80 px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-wide text-slate-400">
-                      Email
-                    </p>
-                    <p className="text-xs text-slate-200">
-                      {user.email || 'Not set'}
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-slate-900/80 px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-wide text-slate-400">
-                      Local account since
-                    </p>
-                    <p className="text-xs text-slate-200">
-                      {new Date(user.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={logout}
-                  className="mt-3 rounded-full border border-rose-500/60 bg-rose-500/10 px-4 py-1.5 text-[11px] font-medium text-rose-200 hover:bg-rose-500/20"
-                >
-                  Log out of this demo account
-                </button>
-              </div>
-
-              <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-3">
-                <p className="text-[10px] uppercase tracking-wide text-slate-400">
-                  Servers you are managing
-                </p>
-                <ul className="space-y-1.5">
-                  {servers.map((server) => (
+              ) : (
+                <ul className="mt-3 space-y-2">
+                  {servers.map((srv) => (
                     <li
-                      key={server.id}
-                      className="flex items-center justify-between rounded-lg bg-slate-900/80 px-2 py-1.5"
+                      key={srv.id}
+                      className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/70 px-3 py-2"
                     >
-                      <div className="flex flex-col">
-                        <span className="text-[11px] text-slate-100">
-                          {server.name}
-                        </span>
-                        <span className="text-[9px] text-slate-500">
-                          {server.ip} · {server.tags.join(', ')}
-                        </span>
+                      <div>
+                        <p className="text-[11px] font-medium text-slate-50">
+                          {srv.name}
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          Status: {srv.status} · Plan: {srv.planId} ·{' '}
+                          {srv.billing}
+                        </p>
+                        <button
+                          onClick={() =>
+                            navigate(`/servers/${srv.id}/edit`)
+                          }
+                          className="mt-1 rounded-full border border-slate-700 bg-slate-950 px-2 py-0.5 text-[10px] text-slate-200 hover:border-cyan-400 hover:text-cyan-300"
+                        >
+                          Edit server code
+                        </button>
                       </div>
-                      <span
-                        className={
-                          'rounded-full px-2 py-0.5 text-[9px] ' +
-                          (server.status === 'online'
-                            ? 'bg-emerald-500/10 text-emerald-300'
-                            : server.status === 'restarting'
-                            ? 'bg-amber-500/10 text-amber-300'
-                            : 'bg-rose-500/10 text-rose-300')
-                        }
-                      >
-                        {server.status === 'online'
-                          ? 'Online'
-                          : server.status === 'restarting'
-                          ? 'Restarting'
-                          : 'Offline'}
+                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">
+                        {srv.ip || 'pending'}
                       </span>
                     </li>
                   ))}
                 </ul>
-                <p className="text-[9px] text-slate-500">
-                  In a real deployment, this list would come from your backend
-                  and match your actual FiveM / GTA servers and staff access.
+              )}
+
+              <button
+                onClick={handleCreateServer}
+                disabled={creating}
+                className="mt-4 inline-flex items-center rounded-full bg-gradient-to-r from-cyan-500 to-emerald-400 px-4 py-1.5 text-[11px] font-medium text-slate-950 hover:brightness-110 disabled:opacity-60"
+              >
+                {creating ? 'Creating demo server...' : 'Create demo server entry'}
+              </button>
+            </div>
+
+            {/* RIGHT: extra info + quick actions */}
+            <div className="space-y-3 text-[11px] text-slate-300">
+              <div className="gta-card p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                  Quick actions
+                </p>
+                <div className="mt-3 flex flex-col gap-2">
+                  <button
+                    onClick={() => navigate('/pricing')}
+                    className="w-full rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-left text-[11px] text-slate-100 hover:border-cyan-400 hover:text-cyan-300"
+                  >
+                    View pricing &amp; upgrade
+                  </button>
+                  <button
+                    onClick={() => navigate('/app/dashboard')}
+                    className="w-full rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-left text-[11px] text-slate-100 hover:border-cyan-400 hover:text-cyan-300"
+                  >
+                    Go to in-panel dashboard
+                  </button>
+                </div>
+              </div>
+
+              <div className="gta-card p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                  Security
+                </p>
+                <p className="mt-2 text-slate-400">
+                  Only you can access the servers attached to this account. Keep
+                  your email + password safe and don&apos;t share them with
+                  anyone.
+                </p>
+                <p className="mt-2 text-slate-400">
+                  Later we can add staff accounts and permissions (for example:
+                  devs that can restart the server but can&apos;t change
+                  billing).
                 </p>
               </div>
             </div>
           </section>
-        )}
+        </div>
       </main>
     </div>
   )

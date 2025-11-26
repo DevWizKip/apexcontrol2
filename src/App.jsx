@@ -1,7 +1,6 @@
 // src/App.jsx
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 
-// Marketing / public pages
 import HomePage from './pages/HomePage'
 import FeaturesPage from './pages/FeaturesPage'
 import AnalyticsPage from './pages/AnalyticsPage'
@@ -10,8 +9,9 @@ import PricingPage from './pages/PricingPage'
 import AccountPage from './pages/AccountPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import SuccessPage from './pages/SuccessPage'
+import ServerEditPage from './pages/ServerEditPage'
 
-// In-app panel pages (admin / server management)
 import AppShell from './app/AppShell'
 import DashboardPage from './app/DashboardPage'
 import PlayersPage from './app/PlayersPage'
@@ -22,29 +22,50 @@ import ServerLogsPage from './app/ServerLogsPage'
 function App() {
   return (
     <Routes>
-      {/* Public / marketing pages */}
+      {/* Marketing / public site */}
       <Route path="/" element={<HomePage />} />
       <Route path="/features" element={<FeaturesPage />} />
       <Route path="/analytics" element={<AnalyticsPage />} />
       <Route path="/security" element={<SecurityPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+
+      {/* Auth & account */}
       <Route path="/account" element={<AccountPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
 
-      {/* In-app panel area */}
+      {/* Success / cancel pages */}
+      <Route path="/success" element={<SuccessPage />} />
+      <Route
+        path="/cancel"
+        element={
+          <div className="min-h-screen bg-gta bg-cover bg-fixed bg-center bg-no-repeat">
+            <main className="flex min-h-screen items-center justify-center bg-slate-950/80 px-4 py-10 text-slate-50 backdrop-blur">
+              <div className="gta-card w-full max-w-md p-6 text-center">
+                <h1 className="text-xl font-semibold tracking-tight text-slate-50">
+                  Payment canceled
+                </h1>
+                <p className="mt-2 text-[11px] text-slate-400">
+                  Your payment was canceled. You can pick another plan or try
+                  again later.
+                </p>
+              </div>
+            </main>
+          </div>
+        }
+      />
+
+      {/* New: server edit page */}
+      <Route path="/servers/:serverId/edit" element={<ServerEditPage />} />
+
+      {/* In-app "fake" panel area */}
       <Route path="/app" element={<AppShell />}>
-        {/* default /app goes to dashboard */}
-        <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="players" element={<PlayersPage />} />
-        <Route path="players/:playerId" element={<PlayerDetailPage />} />
+        <Route path="players/:id" element={<PlayerDetailPage />} />
         <Route path="moderation" element={<ModerationPage />} />
-        <Route path="server-logs" element={<ServerLogsPage />} />
+        <Route path="logs" element={<ServerLogsPage />} />
       </Route>
-
-      {/* Fallback: unknown routes → home */}
-      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
