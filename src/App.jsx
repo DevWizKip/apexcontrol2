@@ -17,7 +17,7 @@ import DashboardPage from './app/DashboardPage'
 import PlayersPage from './app/PlayersPage'
 import PlayerDetailPage from './app/PlayerDetailPage'
 import ModerationPage from './app/ModerationPage'
-import ServerLogsPage from './app/ServerLogsPage'
+// 🔴 NOTE: no more "ServerLogsPage" import here
 
 function App() {
   return (
@@ -55,16 +55,16 @@ function App() {
         }
       />
 
-      {/* New: server edit page */}
+      {/* Server edit page */}
       <Route path="/servers/:serverId/edit" element={<ServerEditPage />} />
 
-      {/* In-app "fake" panel area */}
+      {/* In-app "panel" area */}
       <Route path="/app" element={<AppShell />}>
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="players" element={<PlayersPage />} />
         <Route path="players/:id" element={<PlayerDetailPage />} />
         <Route path="moderation" element={<ModerationPage />} />
-        <Route path="logs" element={<ServerLogsPage />} />
+        {/* 🔴 logs route removed */}
       </Route>
     </Routes>
   )
